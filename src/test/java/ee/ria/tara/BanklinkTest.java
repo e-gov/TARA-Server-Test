@@ -257,7 +257,7 @@ public class BanklinkTest extends TestsBase {
         assertThat(claims.getSubject(), equalTo("LV320000-00000"));
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo("GIVEN-NAME1"));
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("TEST-SURNAME"));
-        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("2000-01-01"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo(null));
         assertThat(claims.getStringArrayClaim("amr")[0], equalTo("banklink"));
     }
 
