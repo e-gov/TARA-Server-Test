@@ -87,4 +87,49 @@ public class MobileIdTest extends TestsBase {
         String errorMessage = authenticateWithMobileIdPollError("01100266", "60001019950", 1000);
         assertThat(errorMessage, startsWith("Autentimine on katkestatud."));
     }
+
+    /**
+     * Verifying that user receives proper error message when user inserts invalid id code
+     */
+    @Test
+    public void mob3_mobileIdAuthenticationInvalidIdCode() {
+        String errorMessage = authenticateWithMobileIdInvalidInputError("00000766","66", 1000);
+        assertEquals("Kasutajal pole Mobiil-ID lepingut.Intsidendi number:", errorMessage);
+    }
+
+    /**
+     * Verifying that user receives proper error message when user inserts invalid phone number
+     */
+    @Test
+    public void mob3_mobileIdAuthenticationInvalidPhoneNumber() {
+        String errorMessage = authenticateWithMobileIdInvalidInputError("123456789123","60001019906", 1000);
+        assertEquals("Kasutajal pole Mobiil-ID lepingut.Intsidendi number:", errorMessage);
+    }
+
+    /**
+     * Verifying that user receives proper error message when user doesn't insert phone number
+     */
+    @Test
+    public void mob3_mobileIdAuthenticationNoMobileNo() {
+        String errorMessage = authenticateWithMobileIdInvalidInputError("","60001019906", 1000);
+        assertEquals("Telefoninumber ei ole korrektne.Intsidendi number:", errorMessage);
+    }
+
+    /**
+     * Verifying that user receives proper error message when user doesn't insert id code
+     */
+    @Test
+    public void mob3_mobileIdAuthenticationNoIdCode() {
+        String errorMessage = authenticateWithMobileIdInvalidInputError("00000766","", 1000);
+        assertEquals("Isikukood ei ole korrektne.Intsidendi number:", errorMessage);
+    }
+
+    /**
+     * Verifying that user receives proper error message when user doesn't insert any parameters
+     */
+    @Test
+    public void mob3_mobileIdAuthenticationNoParameters() {
+        String errorMessage = authenticateWithMobileIdInvalidInputError("","", 1000);
+        assertEquals("Isikukood ei ole korrektne.Intsidendi number:", errorMessage);
+    }
 }

@@ -199,6 +199,29 @@ public abstract class TestsBase {
         return getAuthorizationCode(location);
     }
 
+    protected String getAuthorizationCodeResponseWithMobileId(String mobileNo, String idCode, Integer pollMillis, String execution) throws InterruptedException, URISyntaxException {
+        String execution2 = given()
+                .filter(cookieFilter).relaxedHTTPSValidation()
+                .formParam("execution", execution)
+                .formParam("_eventId", "submit")
+                .formParam("mobileNumber", mobileNo)
+                .formParam("moblang", "et")
+                .formParam("principalCode", idCode)
+                .queryParam("client_id", testTaraProperties.getClientId())
+                .queryParam("redirect_uri", testTaraProperties.getTestRedirectUri())
+//                .log().all()
+                .when()
+                .post(testTaraProperties.getLoginUrl())
+                .then()
+//                .log().all()
+                .extract().response()
+                .htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
+
+        String location = pollForAuthentication(execution2, pollMillis);
+
+        return getAuthorizationRedirectLink(location);
+    }
+
     protected Response initiateEidasAuthentication(String personCountry, String scope, String acrValues) {
         Map<String, String> formParams = new HashMap<String, String>();
         formParams.put("scope", scope);
@@ -318,76 +341,26 @@ public abstract class TestsBase {
     }
 
     protected Response getAuthenticationMethodsPage(String scope) {
-        state = RandomStringUtils.random(16);
-        String sha256StateBase64 = Base64.getEncoder().encodeToString(DigestUtils.sha256(state));
-        nonce = RandomStringUtils.random(16);
-        String sha256NonceBase64 = Base64.getEncoder().encodeToString(DigestUtils.sha256(nonce));
-        String location = given()
-                .filter(cookieFilter)
-                .relaxedHTTPSValidation()
-                .queryParam("scope", scope)
-                .queryParam("response_type", "code")
-                .queryParam("client_id", testTaraProperties.getClientId())
-                .queryParam("redirect_uri", testTaraProperties.getTestRedirectUri())
-                .queryParam("state", sha256StateBase64)
-                .queryParam("nonce", sha256NonceBase64)
-                .queryParam("lang", "et")
-                .when()
-                .redirects().follow(false)
-//                .log().all()
-                .get(testTaraProperties.getAuthorizeUrl())
-                .then()
-//                .log().all()
-                .extract().response()
-                .getHeader("location");
+        Map<String, String> formParams = new HashMap<String, String>();
+        formParams.put("scope", scope);
+        formParams.put("response_type", "code");
+        formParams.put("client_id", testTaraProperties.getClientId());
+        formParams.put("redirect_uri", testTaraProperties.getTestRedirectUri());
+        formParams.put("lang", "et");
 
-        return given()
-                .filter(cookieFilter)
-                .relaxedHTTPSValidation()
-                .when()
-                .redirects().follow(false)
-                .urlEncodingEnabled(false)
-                //               .log().all()
-                .get(location)
-                .then()
-//                .log().all()
-                .extract().response();
+        return getAuthenticationMethodsPageWithOptionalStateOrNonce(formParams, true, true);
     }
 
     protected Response getAuthenticationMethodsPageWithParams(Map<String, String> values) {
-        state = RandomStringUtils.random(16);
-        String sha256StateBase64 = Base64.getEncoder().encodeToString(DigestUtils.sha256(state));
-        nonce = RandomStringUtils.random(16);
-        String sha256NonceBase64 = Base64.getEncoder().encodeToString(DigestUtils.sha256(nonce));
-        String location = given()
-                .filter(cookieFilter)
-                .relaxedHTTPSValidation()
-                .queryParams(values)
-                .queryParam("state", sha256StateBase64)
-                .queryParam("nonce", sha256NonceBase64)
-                .when()
-                .redirects().follow(false)
-//                .log().all()
-                .get(testTaraProperties.getAuthorizeUrl())
-                .then()
-//                .log().all()
-                .extract().response()
-                .getHeader("location");
-
-        return given()
-                .filter(cookieFilter)
-                .relaxedHTTPSValidation()
-                .when()
-                .redirects().follow(false)
-                .urlEncodingEnabled(false)
-//                .log().all()
-                .get(location)
-                .then()
-//                .log().all()
-                .extract().response();
+        return getAuthenticationMethodsPageWithOptionalStateOrNonce(values, true, true);
     }
 
     protected String getAuthorizationCode(String url) throws URISyntaxException {
+        String location = getAuthorizationRedirectLink(url);
+        return getCode(location);
+    }
+
+    protected String getAuthorizationRedirectLink(String url){
         String location = given()
                 .filter(cookieFilter)
                 .relaxedHTTPSValidation()
@@ -401,7 +374,7 @@ public abstract class TestsBase {
                 .extract().response()
                 .getHeader("location");
 
-        String location2 = given()
+        return given()
                 .filter(cookieFilter)
                 .relaxedHTTPSValidation()
 //                .log().all()
@@ -413,8 +386,6 @@ public abstract class TestsBase {
 //                .log().all()
                 .extract().response()
                 .getHeader("Location");
-
-        return getCode(location2);
     }
 
     protected String getIdToken(String authorizationCode) {
@@ -438,12 +409,42 @@ public abstract class TestsBase {
                 .extract().response();
     }
 
+    protected Response postToTokenEndpoint(String authorizationCode, String secret) {
+        return given()
+                .relaxedHTTPSValidation()
+                .queryParam("grant_type", "authorization_code")
+                .queryParam("code", authorizationCode)
+                .queryParam("redirect_uri", testTaraProperties.getTestRedirectUri())
+//                .log().all()
+                .when()
+                .header("Authorization", getAuthorization(testTaraProperties.getClientId(), secret))
+                .urlEncodingEnabled(true)
+                .post(testTaraProperties.getTokenUrl())
+                .then()
+//                .log().all()
+                .extract().response();
+    }
+
+    protected Response postToTokenEndpoint(Map<String, String> values) {
+        return given()
+                .relaxedHTTPSValidation()
+                .queryParams(values)
+//                .log().all()
+                .when()
+                .header("Authorization", getAuthorization(testTaraProperties.getClientId(), testTaraProperties.getClientSecret()))
+                .urlEncodingEnabled(true)
+                .post(testTaraProperties.getTokenUrl())
+                .then()
+//                .log().all()
+                .extract().response();
+    }
+
     protected String getAuthorization(String id, String secret) {
         return String.format("Basic %s", Base64.getEncoder().encodeToString(String.format("%s:%s", id, secret).getBytes(StandardCharsets.UTF_8)));
     }
 
-    private String getCode(String url) throws URISyntaxException {
-        List<NameValuePair> params = URLEncodedUtils.parse(new URI(url), "UTF-8");
+    public String getCode(String url) throws URISyntaxException {
+        List<NameValuePair> params = URLEncodedUtils.parse(new URI(url), StandardCharsets.UTF_8);
 
         Map<String, String> queryParams = params.stream().collect(
                 Collectors.toMap(NameValuePair::getName, NameValuePair::getValue));
@@ -478,6 +479,28 @@ public abstract class TestsBase {
                         } else {
                             throw new RuntimeException("Calculated nonce do not match the received one!");
                         }
+                    } else {
+                        throw new RuntimeException("Token validity period is not valid! current: " + date + " nbf: " + signedJWT.getJWTClaimsSet().getNotBeforeTime() + " exp: " + signedJWT.getJWTClaimsSet().getExpirationTime());
+                    }
+                } else {
+                    throw new RuntimeException("Token Issuer is not valid! Expected: " + tokenIssuer + " actual: " + signedJWT.getJWTClaimsSet().getIssuer());
+                }
+            } else {
+                throw new RuntimeException("Token Audience is not valid! Expected: " + testTaraProperties.getClientId() + " actual: " + signedJWT.getJWTClaimsSet().getAudience().get(0));
+            }
+        } else {
+            throw new RuntimeException("Token Signature is not valid!");
+        }
+    }
+
+    protected SignedJWT verifyTokenAndReturnSignedJwtObjectWithoutNonce(String token) throws ParseException, JOSEException {
+        SignedJWT signedJWT = SignedJWT.parse(token);
+        if (isTokenSignatureValid(signedJWT)) {
+            if (signedJWT.getJWTClaimsSet().getAudience().get(0).equals(testTaraProperties.getClientId())) {
+                if (signedJWT.getJWTClaimsSet().getIssuer().equals(tokenIssuer)) {
+                    Date date = new Date();
+                    if (date.after(signedJWT.getJWTClaimsSet().getNotBeforeTime()) && date.before(signedJWT.getJWTClaimsSet().getExpirationTime())) {
+                        return signedJWT;
                     } else {
                         throw new RuntimeException("Token validity period is not valid! current: " + date + " nbf: " + signedJWT.getJWTClaimsSet().getNotBeforeTime() + " exp: " + signedJWT.getJWTClaimsSet().getExpirationTime());
                     }
@@ -823,5 +846,113 @@ public abstract class TestsBase {
         String error = pollForError(execution2, pollMillis).htmlPath().getString("**.findAll { it.@class=='error-box' }");
         error = error.substring(4);
         return error;
+    }
+
+    protected Response sendAuthenticationRequest(Map<String, String> values) {
+        state = RandomStringUtils.random(16);
+        String sha256StateBase64 = Base64.getEncoder().encodeToString(DigestUtils.sha256(state));
+        nonce = RandomStringUtils.random(16);
+        String sha256NonceBase64 = Base64.getEncoder().encodeToString(DigestUtils.sha256(nonce));
+        return given()
+                .filter(cookieFilter)
+                .relaxedHTTPSValidation()
+                .queryParams(values)
+                .queryParam("state", sha256StateBase64)
+                .queryParam("nonce", sha256NonceBase64)
+                .when()
+                .redirects().follow(false)
+//              .log().all()
+                .get(testTaraProperties.getAuthorizeUrl())
+                .then()
+//              .log().all()
+                .extract().response();
+
+    }
+
+    protected Response getAuthenticationMethodsPageWithOptionalStateOrNonce(Map<String, String> values, boolean addState, boolean addNonce) {
+
+        if (addNonce) {
+            nonce = RandomStringUtils.random(16);
+            String sha256NonceBase64 = Base64.getEncoder().encodeToString(DigestUtils.sha256(nonce));
+            values.put("nonce", sha256NonceBase64);
+        }
+        if (addState) {
+            state = RandomStringUtils.random(16);
+            String sha256StateBase64 = Base64.getEncoder().encodeToString(DigestUtils.sha256(state));
+            values.put("state", sha256StateBase64);
+        }
+        String location = given()
+                .filter(cookieFilter)
+                .relaxedHTTPSValidation()
+                .queryParams(values)
+                .when()
+                .redirects().follow(false)
+//              .log().all()
+                .get(testTaraProperties.getAuthorizeUrl())
+                .then()
+//              .log().all()
+                .extract().response()
+                .getHeader("location");
+
+        return given()
+                .filter(cookieFilter)
+                .relaxedHTTPSValidation()
+                .when()
+                .redirects().follow(false)
+                .urlEncodingEnabled(false)
+//                .log().all()
+                .get(location)
+                .then()
+//                .log().all()
+                .extract().response();
+
+    }
+
+    protected Map<String,String> getQueryParams(String url) throws URISyntaxException {
+        List<NameValuePair> params = URLEncodedUtils.parse(new URI(url), StandardCharsets.UTF_8);
+        return params.stream().collect(
+                Collectors.toMap(NameValuePair::getName, NameValuePair::getValue));
+    }
+
+    protected String createBase64EncodedHash(String data){
+        return Base64.getEncoder().encodeToString(DigestUtils.sha256(data));
+
+    }
+
+    protected String authenticateWithSmartIdInvalidInputPollError(String idCode, Integer pollMillis) throws InterruptedException, URISyntaxException {
+        String execution = getAuthenticationMethodsPage(OIDC_DEF_SCOPE).getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
+        String error = given()
+                .filter(cookieFilter).relaxedHTTPSValidation()
+                .formParam("execution", execution)
+                .formParam("_eventId", "smartIdSubmit")
+                .formParam("principalCode", idCode)
+                .queryParam("client_id", testTaraProperties.getClientId())
+                .queryParam("redirect_uri", testTaraProperties.getTestRedirectUri())
+                .when()
+                .post(testTaraProperties.getLoginUrl())
+                .then()
+                .extract().response()
+                .htmlPath().getString("**.find { it.@class=='error-box' }");
+        return error.substring(4, error.indexOf(":") + 1);
+    }
+
+    protected String authenticateWithMobileIdInvalidInputError(String mobileNo, String idCode, Integer pollMillis) {
+        String execution = getAuthenticationMethodsPage(OIDC_DEF_SCOPE).getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
+        String error = given()
+                .filter(cookieFilter).relaxedHTTPSValidation()
+                .formParam("execution", execution)
+                .formParam("_eventId", "submit")
+                .formParam("mobileNumber", mobileNo)
+                .formParam("moblang", "et")
+                .formParam("principalCode", idCode)
+                .queryParam("client_id", testTaraProperties.getClientId())
+                .queryParam("redirect_uri", testTaraProperties.getTestRedirectUri())
+                .when()
+                .post(testTaraProperties.getLoginUrl())
+                .then()
+                .extract().response()
+                .htmlPath().getString("**.findAll { it.@class=='error-box' }");
+
+        return error.substring(4, error.indexOf(":") + 1);
     }
 }
