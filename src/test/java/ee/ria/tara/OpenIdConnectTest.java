@@ -2,6 +2,7 @@ package ee.ria.tara;
 
 
 import com.nimbusds.jose.jwk.JWKSet;
+import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import ee.ria.tara.config.IntegrationTest;
 import ee.ria.tara.config.TestTaraProperties;
@@ -41,10 +42,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static ee.ria.tara.config.TaraTestStrings.*;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.isEmptyOrNullString;
-import static org.hamcrest.Matchers.startsWith;
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.Matchers.*;
 
 
 @SpringBootTest(classes = OpenIdConnectTest.class)
@@ -94,17 +94,18 @@ public class OpenIdConnectTest extends TestsBase {
     }
 
     @Test
+    //TODO: duplicate with MobileIdTest.mob1_mobileIdAuthenticationSuccessWithRealLifeDelay
     public void oidc1_authenticationWithMidShouldSucceed() throws Exception {
         Response oidcResponse = MobileId.authenticateWithMobileId(flow, "00000766", "60001019906", 7000, OIDC_DEF_SCOPE);
         String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        SignedJWT signedJWT = Steps.verifyTokenAndReturnSignedJwtObject(flow, token);
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
 
-        assertEquals(OIDC_AMR_MID, signedJWT.getJWTClaimsSet().getStringArrayClaim("amr")[0]);
-        assertEquals("EE60001019906", signedJWT.getJWTClaimsSet().getSubject());
-        assertEquals("MARY ÄNN", signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("given_name"));
-        assertEquals("O’CONNEŽ-ŠUSLIK TESTNUMBER", signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("family_name"));
-        assertEquals(null, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("mobile_number"));
-        assertEquals("2000-01-01", signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"));
+        assertThat(claims.getSubject(), equalTo("EE60001019906"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo("MARY ÄNN"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("O’CONNEŽ-ŠUSLIK TESTNUMBER"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("2000-01-01"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").keySet(), not(hasItem("mobile_number")));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo(OIDC_AMR_MID));
     }
 
     @Test
@@ -118,13 +119,13 @@ public class OpenIdConnectTest extends TestsBase {
         String location = Eidas.returnEidasResponse(flow, samlResponse, relayState);
         Response oidcResponse = Requests.followLoginRedirects(flow, location);
         String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        SignedJWT signedJWT = Steps.verifyTokenAndReturnSignedJwtObject(flow, token);
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
 
-        assertEquals("EE30011092212", signedJWT.getJWTClaimsSet().getSubject());
-        assertEquals(DEFATTR_FIRST, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("given_name"));
-        assertEquals(DEFATTR_FAMILY, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("family_name"));
-        assertEquals(DEFATTR_DATE, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"));
-        assertEquals(OIDC_AMR_EIDAS, signedJWT.getJWTClaimsSet().getStringArrayClaim("amr")[0]);
+        assertThat(claims.getSubject(), equalTo("EE30011092212"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo(DEFATTR_FIRST));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo(DEFATTR_FAMILY));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo(DEFATTR_DATE));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo(OIDC_AMR_EIDAS));
     }
 
     @Test
@@ -133,8 +134,9 @@ public class OpenIdConnectTest extends TestsBase {
         Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
 
         Response response = Requests.postToTokenEndpoint(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        assertEquals(400, response.statusCode());
-        assertEquals("invalid_grant", response.body().jsonPath().getString("error"));
+        response.then().statusCode(400);
+        response.then().body("error", equalTo("invalid_grant"));
+
     }
 
     @Test //TODO: Error handling is changed with AUT-57
@@ -160,8 +162,8 @@ public class OpenIdConnectTest extends TestsBase {
         Response oidcResponse = MobileId.authenticateWithMobileId(flow, "00000766", "60001019906", 3000, OIDC_DEF_SCOPE);
         flow.getRelyingParty().setSecret("invalid_secret");
         Response response = Requests.postToTokenEndpoint(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        assertEquals(401, response.statusCode());
-        assertEquals("invalid_client", response.body().jsonPath().getString("error"));
+        response.then().statusCode(401);
+        response.then().body("error", equalTo("invalid_client"));
     }
 
     @Test
@@ -169,9 +171,8 @@ public class OpenIdConnectTest extends TestsBase {
         Response oidcResponse = MobileId.authenticateWithMobileId(flow, "00000766", "60001019906", 3000, OIDC_DEF_SCOPE);
         String authorizationCode = OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location"));
         Response response = Requests.postToTokenEndpoint(flow, authorizationCode + "a");
-
-        assertEquals(400, response.statusCode());
-        assertEquals("invalid_grant", response.body().jsonPath().getString("error"));
+        response.then().statusCode(400);
+        response.then().body("error", equalTo("invalid_grant"));
     }
 
     @Test
@@ -180,8 +181,8 @@ public class OpenIdConnectTest extends TestsBase {
         params.put("grant_type", "authorization_code");
         params.put("redirect_uri", flow.getRelyingParty().getRedirectUri());
         Response response = Requests.postToTokenEndpoint(flow, params);
-        assertEquals(400, response.statusCode());
-        assertEquals("invalid_request", response.body().jsonPath().getString("error"));
+        response.then().statusCode(400);
+        response.then().body("error", equalTo("invalid_request"));
     }
 
     @Test
@@ -193,8 +194,8 @@ public class OpenIdConnectTest extends TestsBase {
         params.put("code", authorizationCode);
         params.put("redirect_uri", testTaraProperties.getTestRedirectUri());
         Response response = Requests.postToTokenEndpoint(flow, params);
-        assertEquals(400, response.statusCode());
-        assertEquals("invalid_request", response.body().jsonPath().getString("error"));
+        response.then().statusCode(400);
+        response.then().body("error", equalTo("invalid_request"));
     }
 
     @Test
@@ -245,25 +246,26 @@ public class OpenIdConnectTest extends TestsBase {
         params.put("grant_type", "code");
         params.put("redirect_uri", flow.getRelyingParty().getRedirectUri());
         Response response = Requests.postToTokenEndpoint(flow, params);
-        assertEquals(400, response.statusCode());
-        assertEquals("unsupported_grant_type", response.body().jsonPath().getString("error"));
+        response.then().statusCode(400);
+        response.then().body("error", equalTo("unsupported_grant_type"));
     }
 
     @Test
     public void oidc2_stateAndNonceInAuthorizationCodeResponseShouldMatchExpected() throws Exception {
         Response oidcResponse = MobileId.authenticateWithMobileId(flow, "00000766", "60001019906", 3000, OIDC_DEF_SCOPE);
         Map<String, String> params = getQueryParams(oidcResponse.getHeader("location"));
-        assertEquals(params.get("nonce"), flow.getNonce());
-        assertEquals(params.get("state"), flow.getState());
+
+        assertThat(params.get("nonce"), equalTo(flow.getNonce()));
+        assertThat(params.get("state"), equalTo(flow.getState()));
     }
 
     @Test
     public void oidc2_stateAndNonceInIdTokenResponseShouldMatchExpected() throws Exception {
         Response oidcResponse = MobileId.authenticateWithMobileId(flow, "00000766", "60001019906", 3000, OIDC_DEF_SCOPE);
         String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        SignedJWT signedJWT = SignedJWT.parse(token);
-        assertEquals(signedJWT.getJWTClaimsSet().getStringClaim("nonce"), flow.getNonce());
-        assertEquals(signedJWT.getJWTClaimsSet().getStringClaim("state"), flow.getState());
+        JWTClaimsSet claims = SignedJWT.parse(token).getJWTClaimsSet();
+        assertThat(claims.getStringClaim("nonce"), equalTo(flow.getNonce()));
+        assertThat(claims.getStringClaim("state"), equalTo(flow.getState()));
     }
 
     @Test
@@ -282,8 +284,8 @@ public class OpenIdConnectTest extends TestsBase {
         Response oidcResponse = Requests.followLoginRedirects(flow, pollResponse.getHeader("location"));
 
         Map<String, String> params = getQueryParams(oidcResponse.getHeader("location"));
-        assertEquals(params.get("nonce"), null);
-        assertEquals(params.get("state"), flow.getState());
+        assertThat(params.get("nonce"), equalTo(null));
+        assertThat(params.get("state"), equalTo(flow.getState()));
     }
 
     @Test
@@ -301,32 +303,32 @@ public class OpenIdConnectTest extends TestsBase {
         Response pollResponse = MobileId.pollForAuthentication(flow, execution2, 3000);
         Response oidcResponse = Requests.followLoginRedirects(flow, pollResponse.getHeader("location"));
         String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        SignedJWT signedJWT = SignedJWT.parse(token);
+        JWTClaimsSet claims = SignedJWT.parse(token).getJWTClaimsSet();
 
-        assertThat("There is no nonce in id token", signedJWT.getJWTClaimsSet().getStringClaim("nonce"), isEmptyOrNullString());
-        assertEquals(signedJWT.getJWTClaimsSet().getStringClaim("state"), flow.getState());
+        assertThat("There is no nonce in id token", claims.getStringClaim("nonce"), isEmptyOrNullString());
+        assertThat(claims.getStringClaim("state"), equalTo(flow.getState()));
     }
 
     @Test
     public void oidc3_eidasOnlyScopeShouldShowOnlyEidas() throws Exception {
         Response response = Requests.getAuthenticationMethodsPageWithScope(flow, OIDC_EIDAS_ONLY_SCOPE);
 
-        assertEquals("Only eIDAS must be present", true, isEidasPresent(response));
-        assertEquals("Only eIDAS must be present", false, isMidPresent(response));
-        assertEquals("Only eIDAS must be present", false, isIdCardPresent(response));
-        assertEquals("Only eIDAS must be present", false, isBankPresent(response));
-        //TODO: isSmartIdPresent
+        assertThat("Only eIDAS must be present", isEidasPresent(response));
+        assertThat("Only eIDAS must be present", isMidPresent(response), is(false));
+        assertThat("Only eIDAS must be present", isIdCardPresent(response), is(false));
+        assertThat("Only eIDAS must be present", isBankPresent(response), is(false));
+        assertThat("Only eIDAS must be present", isSmartIdPresent(response), is(false));
     }
 
     @Test
     public void oidc3_allAuthenticationMethodsShouldBePresent() throws Exception {
         Response response = Requests.getAuthenticationMethodsPageWithScope(flow, OIDC_DEF_SCOPE);
 
-        assertEquals("eIDAS must be present", true, isEidasPresent(response));
-        assertEquals("MID must be present", true, isMidPresent(response));
-        assertEquals("ID-Card must be present", true, isIdCardPresent(response));
-        assertEquals("Bank must be present", true, isBankPresent(response));
-        //TODO: isSmartIdPresent
+        assertThat("eIDAS must be present", isEidasPresent(response));
+        assertThat("MID must be present", isMidPresent(response));
+        assertThat("ID-Card must be present", isIdCardPresent(response));
+        assertThat("Bank must be present", isBankPresent(response));
+        assertThat("Smart-ID must be present", isSmartIdPresent(response));
     }
 
     @Test
@@ -374,14 +376,15 @@ public class OpenIdConnectTest extends TestsBase {
         Response pollResponse = MobileId.pollForAuthentication(flow, execution2, 7000);
         Response oidcResponse = Requests.followLoginRedirects(flow, pollResponse.getHeader("location"));
         String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        SignedJWT signedJWT = Steps.verifyTokenAndReturnSignedJwtObject(flow, token);
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
 
-        assertEquals(OIDC_AMR_MID, signedJWT.getJWTClaimsSet().getStringArrayClaim("amr")[0]);
-        assertEquals("EE60001019906", signedJWT.getJWTClaimsSet().getSubject());
-        assertEquals("MARY ÄNN", signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("given_name"));
-        assertEquals("O’CONNEŽ-ŠUSLIK TESTNUMBER", signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("family_name"));
-        assertEquals(null, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("mobile_number"));
-        assertEquals("acr value should not be present for MID", null, signedJWT.getJWTClaimsSet().getClaim("acr"));
+        assertThat(claims.getSubject(), equalTo("EE60001019906"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo("MARY ÄNN"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("O’CONNEŽ-ŠUSLIK TESTNUMBER"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("2000-01-01"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").keySet(), not(hasItem("mobile_number")));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo(OIDC_AMR_MID));
+        assertThat("acr value should not be present for MID", claims.getClaim("acr"), equalTo(null));
     }
 
     @Test
@@ -391,8 +394,7 @@ public class OpenIdConnectTest extends TestsBase {
         queryParams.remove("lang");
         queryParams.put("locale", "ru");
         Response response = Requests.getAuthenticationMethodsPageWithParameters(flow, queryParams);
-        String pageTitle = response.htmlPath().getString("html.head.title");
-        assertEquals("Департамент государственной инфосистемы", pageTitle);
+        response.then().body("html.head.title", equalTo("Департамент государственной инфосистемы"));
     }
 
     @Test
@@ -402,8 +404,7 @@ public class OpenIdConnectTest extends TestsBase {
         queryParams.remove("lang");
         queryParams.put("locale", "fi");
         Response response = Requests.getAuthenticationMethodsPageWithParameters(flow, queryParams);
-        String pageTitle = response.htmlPath().getString("html.head.title");
-        assertEquals("Information System Authority", pageTitle);
+        response.then().body("html.head.title", equalTo("Information System Authority"));
     }
 
     private Map<String, String> getQueryParams(String url) throws URISyntaxException {

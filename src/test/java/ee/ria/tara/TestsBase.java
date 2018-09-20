@@ -225,5 +225,13 @@ public abstract class TestsBase {
             return false;
         }
     }
+    protected Boolean isSmartIdPresent(Response response) {
+        String thisValue = response.htmlPath().getString("**.findAll { it.@id == 'collapseSmartIdForm' }.@aria-labelledby");
+        if (thisValue.equals("methodSmartID")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 
 }

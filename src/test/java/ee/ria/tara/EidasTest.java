@@ -3,7 +3,7 @@ package ee.ria.tara;
 
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.jwk.JWKSet;
-import com.nimbusds.jwt.SignedJWT;
+import com.nimbusds.jwt.JWTClaimsSet;
 import ee.ria.tara.config.IntegrationTest;
 import ee.ria.tara.config.TestTaraProperties;
 import ee.ria.tara.model.OpenIdConnectFlow;
@@ -34,8 +34,9 @@ import java.text.ParseException;
 
 import static ee.ria.tara.config.TaraTestStrings.*;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.core.StringStartsWith.startsWith;
-import static org.junit.Assert.assertEquals;
+
 
 @SpringBootTest(classes = EidasTest.class)
 @Category(IntegrationTest.class)
@@ -86,13 +87,13 @@ public class EidasTest extends TestsBase {
 
     @Test
     public void eidas1_eidasAuthenticationMinAttrSuccess() throws URISyntaxException, ParseException, JOSEException, IOException, InterruptedException {
-        SignedJWT signedJWT = Eidas.eIDASAuthenticationWithScopeAndAcr(flow, DEF_COUNTRY, OIDC_DEF_SCOPE, "low");
+        JWTClaimsSet claims = Eidas.eIDASAuthenticationWithScopeAndAcr(flow, DEF_COUNTRY, OIDC_DEF_SCOPE, "low").getJWTClaimsSet();
 
-        assertEquals("EE30011092212", signedJWT.getJWTClaimsSet().getSubject());
-        assertEquals(DEFATTR_FIRST, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("given_name"));
-        assertEquals(DEFATTR_FAMILY, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("family_name"));
-        assertEquals(DEFATTR_DATE, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"));
-        assertEquals(OIDC_AMR_EIDAS, signedJWT.getJWTClaimsSet().getStringArrayClaim("amr")[0]);
+        assertThat(claims.getSubject(), equalTo("EE30011092212"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo(DEFATTR_FIRST));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo(DEFATTR_FAMILY));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo(DEFATTR_DATE));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo(OIDC_AMR_EIDAS));
     }
 
 
@@ -106,13 +107,13 @@ public class EidasTest extends TestsBase {
         String location = Eidas.returnEidasResponse(flow, samlResponse, relayState);
         Response oidcResponse = Requests.followLoginRedirects(flow, location);
         String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        SignedJWT signedJWT = Steps.verifyTokenAndReturnSignedJwtObject(flow, token);
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
 
-        assertEquals("EE30011092212", signedJWT.getJWTClaimsSet().getSubject());
-        assertEquals(DEFATTR_FIRST, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("given_name"));
-        assertEquals(DEFATTR_FAMILY, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("family_name"));
-        assertEquals(DEFATTR_DATE, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"));
-        assertEquals(OIDC_AMR_EIDAS, signedJWT.getJWTClaimsSet().getStringArrayClaim("amr")[0]);
+        assertThat(claims.getSubject(), equalTo("EE30011092212"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo(DEFATTR_FIRST));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo(DEFATTR_FAMILY));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo(DEFATTR_DATE));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo(OIDC_AMR_EIDAS));
     }
 
     @Test
@@ -127,13 +128,13 @@ public class EidasTest extends TestsBase {
         String location = Eidas.returnEidasResponse(flow, samlResponse, relayState);
         Response oidcResponse = Requests.followLoginRedirects(flow, location);
         String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        SignedJWT signedJWT = Steps.verifyTokenAndReturnSignedJwtObject(flow, token);
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
 
-        assertEquals("EE30011092212", signedJWT.getJWTClaimsSet().getSubject());
-        assertEquals(DEFATTR_FIRST, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("given_name"));
-        assertEquals(DEFATTR_FAMILY, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("family_name"));
-        assertEquals(DEFATTR_DATE, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"));
-        assertEquals(OIDC_AMR_EIDAS, signedJWT.getJWTClaimsSet().getStringArrayClaim("amr")[0]);
+        assertThat(claims.getSubject(), equalTo("EE30011092212"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo(DEFATTR_FIRST));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo(DEFATTR_FAMILY));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo(DEFATTR_DATE));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo(OIDC_AMR_EIDAS));
     }
 
     @Test
@@ -173,57 +174,54 @@ public class EidasTest extends TestsBase {
         Response errorResponse = Eidas.returnEidasErrorResponse(flow, samlResponse, relayState);
         String error = errorResponse.htmlPath().getString("**.findAll { it.@class=='error-box' }").substring(4);
 
-        assertThat(error, startsWith("Autentimine eIDAS-ga ebaõnnestus."));
+        assertThat(error, startsWith("Üldine viga"));
     }
 
     @Test
     public void eidas3_eidasAcrValueLowShouldReturnSuccess() throws Exception {
-        SignedJWT signedJWT = Eidas.eIDASAuthenticationWithScopeAndAcr(flow, DEF_COUNTRY, OIDC_DEF_SCOPE, OIDC_ACR_VALUES_LOW);
+        JWTClaimsSet claims = Eidas.eIDASAuthenticationWithScopeAndAcr(flow, DEF_COUNTRY, OIDC_DEF_SCOPE, OIDC_ACR_VALUES_LOW).getJWTClaimsSet();
 
-        assertEquals("EE30011092212", signedJWT.getJWTClaimsSet().getSubject());
-        assertEquals(DEFATTR_FIRST, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("given_name"));
-        assertEquals(DEFATTR_FAMILY, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("family_name"));
-        assertEquals(DEFATTR_DATE, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"));
-        assertEquals(OIDC_AMR_EIDAS, signedJWT.getJWTClaimsSet().getStringArrayClaim("amr")[0]);
-        assertEquals(OIDC_ACR_VALUES_LOW, signedJWT.getJWTClaimsSet().getClaim("acr"));
-
-
+        assertThat(claims.getSubject(), equalTo("EE30011092212"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo(DEFATTR_FIRST));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo(DEFATTR_FAMILY));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo(DEFATTR_DATE));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo(OIDC_AMR_EIDAS));
+        assertThat(claims.getClaim("acr"), equalTo(OIDC_ACR_VALUES_LOW));
     }
 
     @Test
     public void eidas3_eidasAcrValueSubstantialShouldReturnSuccess() throws Exception {
-        SignedJWT signedJWT = Eidas.eIDASAuthenticationWithScopeAndAcr(flow, DEF_COUNTRY, OIDC_DEF_SCOPE, OIDC_ACR_VALUES_SUBSTANTIAL);
+        JWTClaimsSet claims = Eidas.eIDASAuthenticationWithScopeAndAcr(flow, DEF_COUNTRY, OIDC_DEF_SCOPE, OIDC_ACR_VALUES_SUBSTANTIAL).getJWTClaimsSet();
 
-        assertEquals("EE30011092212", signedJWT.getJWTClaimsSet().getSubject());
-        assertEquals(DEFATTR_FIRST, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("given_name"));
-        assertEquals(DEFATTR_FAMILY, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("family_name"));
-        assertEquals(DEFATTR_DATE, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"));
-        assertEquals(OIDC_AMR_EIDAS, signedJWT.getJWTClaimsSet().getStringArrayClaim("amr")[0]);
-        assertEquals(OIDC_ACR_VALUES_SUBSTANTIAL, signedJWT.getJWTClaimsSet().getClaim("acr"));
+        assertThat(claims.getSubject(), equalTo("EE30011092212"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo(DEFATTR_FIRST));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo(DEFATTR_FAMILY));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo(DEFATTR_DATE));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo(OIDC_AMR_EIDAS));
+        assertThat(claims.getClaim("acr"), equalTo(OIDC_ACR_VALUES_SUBSTANTIAL));
     }
 
     @Test
     public void eidas3_eidasAcrValueHighShouldReturnSuccess() throws Exception {
-        SignedJWT signedJWT = Eidas.eIDASAuthenticationWithScopeAndAcr(flow, DEF_COUNTRY, OIDC_DEF_SCOPE, OIDC_ACR_VALUES_HIGH);
-
-        assertEquals("EE30011092212", signedJWT.getJWTClaimsSet().getSubject());
-        assertEquals(DEFATTR_FIRST, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("given_name"));
-        assertEquals(DEFATTR_FAMILY, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("family_name"));
-        assertEquals(DEFATTR_DATE, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"));
-        assertEquals(OIDC_AMR_EIDAS, signedJWT.getJWTClaimsSet().getStringArrayClaim("amr")[0]);
-        assertEquals(OIDC_ACR_VALUES_HIGH, signedJWT.getJWTClaimsSet().getClaim("acr"));
+        JWTClaimsSet claims = Eidas.eIDASAuthenticationWithScopeAndAcr(flow, DEF_COUNTRY, OIDC_DEF_SCOPE, OIDC_ACR_VALUES_HIGH).getJWTClaimsSet();
+        assertThat(claims.getSubject(), equalTo("EE30011092212"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo(DEFATTR_FIRST));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo(DEFATTR_FAMILY));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo(DEFATTR_DATE));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo(OIDC_AMR_EIDAS));
+        assertThat(claims.getClaim("acr"), equalTo(OIDC_ACR_VALUES_HIGH));
     }
 
     @Test
     public void eidas3_eidasAcrValueDefaultShouldReturnSuccess() throws Exception {
-        SignedJWT signedJWT = Eidas.eIDASAuthenticationWithScopeAndAcr(flow, DEF_COUNTRY, OIDC_DEF_SCOPE, null);
+        JWTClaimsSet claims = Eidas.eIDASAuthenticationWithScopeAndAcr(flow, DEF_COUNTRY, OIDC_DEF_SCOPE, null).getJWTClaimsSet();
 
-        assertEquals("EE30011092212", signedJWT.getJWTClaimsSet().getSubject());
-        assertEquals(DEFATTR_FIRST, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("given_name"));
-        assertEquals(DEFATTR_FAMILY, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("family_name"));
-        assertEquals(DEFATTR_DATE, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"));
-        assertEquals(OIDC_AMR_EIDAS, signedJWT.getJWTClaimsSet().getStringArrayClaim("amr")[0]);
-        assertEquals("Default loa is substantial", OIDC_ACR_VALUES_SUBSTANTIAL, signedJWT.getJWTClaimsSet().getClaim("acr"));
+        assertThat(claims.getSubject(), equalTo("EE30011092212"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo(DEFATTR_FIRST));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo(DEFATTR_FAMILY));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo(DEFATTR_DATE));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo(OIDC_AMR_EIDAS));
+        assertThat("Default loa is substantial", claims.getClaim("acr"), equalTo(OIDC_ACR_VALUES_SUBSTANTIAL));
     }
 
     @Test
@@ -237,14 +235,14 @@ public class EidasTest extends TestsBase {
         String location = Eidas.returnEidasResponse(flow, samlResponse, relayState);
         Response oidcResponse = Requests.followLoginRedirects(flow, location);
         String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        SignedJWT signedJWT = Steps.verifyTokenAndReturnSignedJwtObject(flow, token);
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
 
-        assertEquals("EE30011092212", signedJWT.getJWTClaimsSet().getSubject());
-        assertEquals(DEFATTR_FIRST, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("given_name"));
-        assertEquals(DEFATTR_FAMILY, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("family_name"));
-        assertEquals(DEFATTR_DATE, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"));
-        assertEquals(OIDC_AMR_EIDAS, signedJWT.getJWTClaimsSet().getStringArrayClaim("amr")[0]);
-        assertEquals(OIDC_ACR_VALUES_HIGH, signedJWT.getJWTClaimsSet().getClaim("acr"));
+        assertThat(claims.getSubject(), equalTo("EE30011092212"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo(DEFATTR_FIRST));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo(DEFATTR_FAMILY));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo(DEFATTR_DATE));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo(OIDC_AMR_EIDAS));
+        assertThat(claims.getClaim("acr"), equalTo(OIDC_ACR_VALUES_HIGH));
     }
 
     @Test
@@ -258,7 +256,7 @@ public class EidasTest extends TestsBase {
         Response errorResponse = Eidas.returnEidasFailureResponse(flow, samlResponse, relayState);
         String error = errorResponse.htmlPath().getString("**.findAll { it.@class=='sub-title' }");
 
-        assertEquals("An unexpected error has occurred", error);
+        assertThat(error, equalTo("An unexpected error has occurred"));
     }
 
     @Ignore

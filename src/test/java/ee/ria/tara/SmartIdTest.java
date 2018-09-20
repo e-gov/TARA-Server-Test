@@ -2,7 +2,7 @@ package ee.ria.tara;
 
 
 import com.nimbusds.jose.jwk.JWKSet;
-import com.nimbusds.jwt.SignedJWT;
+import com.nimbusds.jwt.JWTClaimsSet;
 import ee.ria.tara.config.IntegrationTest;
 import ee.ria.tara.config.TestTaraProperties;
 import ee.ria.tara.model.OpenIdConnectFlow;
@@ -28,8 +28,9 @@ import java.util.Map;
 
 import static ee.ria.tara.config.TaraTestStrings.OIDC_DEF_SCOPE;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.startsWith;
-import static org.junit.Assert.assertEquals;
+
 
 @SpringBootTest(classes = SmartIdTest.class)
 @Category(IntegrationTest.class)
@@ -68,13 +69,13 @@ public class SmartIdTest extends TestsBase {
     public void smartidSuccess() throws Exception {
         Response oidcResponse = SmartId.authenticateWithSmartId(flow, "10101010005", 2000, OIDC_DEF_SCOPE);
         String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
 
-        SignedJWT signedJWT = Steps.verifyTokenAndReturnSignedJwtObject(flow, token);
-
-        assertEquals("EE10101010005", signedJWT.getJWTClaimsSet().getSubject());
-        assertEquals("DEMO", signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("given_name"));
-        assertEquals("SMART-ID", signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("family_name"));
-        assertEquals("1801-01-01", signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"));
+        assertThat(claims.getSubject(), equalTo("EE10101010005"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo("DEMO"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("SMART-ID"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("1801-01-01"));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo("smartid"));
     }
 
     @Test

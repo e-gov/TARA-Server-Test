@@ -12,6 +12,11 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.Date;
 
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
+
 public class Steps {
     @Step("{message}")
     public static void log(String message) {
@@ -26,33 +31,23 @@ public class Steps {
         Allure.addLinks(new io.qameta.allure.model.Link()
                 .withName("View Token in jwt.io")
                 .withUrl("https://jwt.io/#debugger-io?token=" + token));
-        if (OpenIdConnectUtils.isTokenSignatureValid(flow, signedJWT)) {
-            if (signedJWT.getJWTClaimsSet().getAudience().get(0).equals(flow.getRelyingParty().getClientId())) {
-                if (signedJWT.getJWTClaimsSet().getIssuer().equals(flow.getOpenIDProvider().getIssuer())) {
-                    Date date = new Date();
-                    if (date.after(signedJWT.getJWTClaimsSet().getNotBeforeTime()) && date.before(signedJWT.getJWTClaimsSet().getExpirationTime())) {
-                        if (signedJWT.getJWTClaimsSet().getClaim("nonce").equals(flow.getNonce())) {
-                            return signedJWT;
-                        } else {
-                            throw new RuntimeException("Calculated nonce do not match the received one!");
-                        }
-                    } else {
-                        throw new RuntimeException("Token validity period is not valid! current: " + date + " nbf: " + signedJWT.getJWTClaimsSet().getNotBeforeTime() + " exp: " + signedJWT.getJWTClaimsSet().getExpirationTime());
-                    }
-                } else {
-                    throw new RuntimeException("Token Issuer is not valid! Expected: " + flow.getOpenIDProvider().getIssuer() + " actual: " + signedJWT.getJWTClaimsSet().getIssuer());
-                }
-            } else {
-                throw new RuntimeException("Token Audience is not valid! Expected: " + flow.getRelyingParty().getClientId() + " actual: " + signedJWT.getJWTClaimsSet().getAudience().get(0));
-            }
-        } else {
-            throw new RuntimeException("Token Signature is not valid!");
+        assertThat("Token Signature is not valid!", OpenIdConnectUtils.isTokenSignatureValid(flow, signedJWT), is(true));
+        assertThat(signedJWT.getJWTClaimsSet().getAudience().get(0), equalTo(flow.getRelyingParty().getClientId()));
+        assertThat(signedJWT.getJWTClaimsSet().getIssuer(), equalTo(flow.getOpenIDProvider().getIssuer()));
+        Date date = new Date();
+        assertThat("Expected current: " + date + " to be after nbf: " + signedJWT.getJWTClaimsSet().getNotBeforeTime(), date.after(signedJWT.getJWTClaimsSet().getNotBeforeTime()), is(true));
+        assertThat("Expected current: " + date + " to be before exp: " + signedJWT.getJWTClaimsSet().getExpirationTime(), date.before(signedJWT.getJWTClaimsSet().getExpirationTime()), is(true));
+        assertThat(signedJWT.getJWTClaimsSet().getStringClaim("state"), equalTo(flow.getState()));
+        if (!flow.getNonce().isEmpty()) {
+            assertThat(signedJWT.getJWTClaimsSet().getStringClaim("nonce"), equalTo(flow.getNonce()));
         }
+        return signedJWT;
     }
+
     static void addJsonAttachment(String name, String json) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         Object jsonObject = mapper.readValue(json, Object.class);
         String prettyJson = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonObject);
-        Allure.addAttachment(name, "application/json",prettyJson,"json");
+        Allure.addAttachment(name, "application/json", prettyJson, "json");
     }
 }

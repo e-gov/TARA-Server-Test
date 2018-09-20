@@ -2,6 +2,7 @@ package ee.ria.tara;
 
 
 import com.nimbusds.jose.jwk.JWKSet;
+import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import ee.ria.tara.config.IntegrationTest;
 import ee.ria.tara.config.TestTaraProperties;
@@ -18,7 +19,6 @@ import org.hamcrest.core.StringContains;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.opensaml.core.config.InitializationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.ResourceLoader;
@@ -35,7 +35,6 @@ import static ee.ria.tara.config.TaraTestStrings.OIDC_DEF_SCOPE;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertEquals;
 
 @SpringBootTest(classes = BanklinkTest.class)
 @Category(IntegrationTest.class)
@@ -82,13 +81,13 @@ public class BanklinkTest extends TestsBase {
         String location = Banklink.banklinkCallbackPOST(flow, bankResponseParams);
         Response oidcResponse = Requests.followLoginRedirects(flow, location);
         String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        SignedJWT signedJWT = Steps.verifyTokenAndReturnSignedJwtObject(flow, token);
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
 
-        assertEquals("EE60001019896", signedJWT.getJWTClaimsSet().getSubject());
-        assertEquals("GIVEN-NAME1", signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("given_name"));
-        assertEquals("TEST-SURNAME", signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("family_name"));
-        assertEquals("2000-01-01", signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"));
-        assertEquals("banklink", signedJWT.getJWTClaimsSet().getStringArrayClaim("amr")[0]);
+        assertThat(claims.getSubject(), equalTo("EE60001019896"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo("GIVEN-NAME1"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("TEST-SURNAME"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("2000-01-01"));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo("banklink"));
     }
 
     @Test
@@ -105,13 +104,13 @@ public class BanklinkTest extends TestsBase {
         String location = Banklink.banklinkCallbackPOST(flow, bankResponseParams);
         Response oidcResponse = Requests.followLoginRedirects(flow, location);
         String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        SignedJWT signedJWT = Steps.verifyTokenAndReturnSignedJwtObject(flow, token);
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
 
-        assertEquals("EE60001019896", signedJWT.getJWTClaimsSet().getSubject());
-        assertEquals("GIVEN-NAME1", signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("given_name"));
-        assertEquals("TEST-SURNAME", signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("family_name"));
-        assertEquals("2000-01-01", signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"));
-        assertEquals("banklink", signedJWT.getJWTClaimsSet().getStringArrayClaim("amr")[0]);
+        assertThat(claims.getSubject(), equalTo("EE60001019896"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo("GIVEN-NAME1"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("TEST-SURNAME"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("2000-01-01"));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo("banklink"));
     }
 
     @Test
@@ -128,13 +127,13 @@ public class BanklinkTest extends TestsBase {
         String location = Banklink.banklinkCallbackGET(flow, bankResponseParams);
         Response oidcResponse = Requests.followLoginRedirects(flow, location);
         String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        SignedJWT signedJWT = Steps.verifyTokenAndReturnSignedJwtObject(flow, token);
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
 
-        assertEquals("EE60001019896", signedJWT.getJWTClaimsSet().getSubject());
-        assertEquals("GIVEN-NAME1", signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("given_name"));
-        assertEquals("TEST-SURNAME", signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("family_name"));
-        assertEquals("2000-01-01", signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"));
-        assertEquals("banklink", signedJWT.getJWTClaimsSet().getStringArrayClaim("amr")[0]);
+        assertThat(claims.getSubject(), equalTo("EE60001019896"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo("GIVEN-NAME1"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("TEST-SURNAME"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("2000-01-01"));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo("banklink"));
     }
 
     @Test
@@ -152,13 +151,13 @@ public class BanklinkTest extends TestsBase {
         String location = Banklink.banklinkCallbackPOST(flow, bankResponseParams);
         Response oidcResponse = Requests.followLoginRedirects(flow, location);
         String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        SignedJWT signedJWT = Steps.verifyTokenAndReturnSignedJwtObject(flow, token);
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
 
-        assertEquals("EE60001019896", signedJWT.getJWTClaimsSet().getSubject());
-        assertEquals("GIVEN-NAME1 GIVEN-NAME2", signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("given_name"));
-        assertEquals("TEST-SURNAME", signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("family_name"));
-        assertEquals("2000-01-01", signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"));
-        assertEquals("banklink", signedJWT.getJWTClaimsSet().getStringArrayClaim("amr")[0]);
+        assertThat(claims.getSubject(), equalTo("EE60001019896"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo("GIVEN-NAME1 GIVEN-NAME2"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("TEST-SURNAME"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("2000-01-01"));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo("banklink"));
     }
 
     @Test
@@ -213,8 +212,6 @@ public class BanklinkTest extends TestsBase {
         BanklinkMock.createBank(flow, "DANSKE", "danske_priv");
 
         Map bankRequestParams = Banklink.startBankAuthentication(flow, "danske", OIDC_DEF_SCOPE, "et");
-
-
         Map bankResponseParams = BanklinkMock.getBankResponse(flow, bankRequestParams);
         String location = Banklink.banklinkCallbackPOST(flow, bankResponseParams);
         Response oidcResponse = Requests.followLoginRedirects(flow, location);
@@ -255,12 +252,13 @@ public class BanklinkTest extends TestsBase {
         String location = Banklink.banklinkCallbackPOST(flow, bankResponseParams);
         Response oidcResponse = Requests.followLoginRedirects(flow, location);
         String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        SignedJWT signedJWT = Steps.verifyTokenAndReturnSignedJwtObject(flow, token);
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
 
-        assertEquals("LV320000-00000", signedJWT.getJWTClaimsSet().getSubject());
-        assertEquals("GIVEN-NAME1", signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("given_name"));
-        assertEquals("TEST-SURNAME", signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("family_name"));
-        assertEquals(null, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"));
+        assertThat(claims.getSubject(), equalTo("LV320000-00000"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo("GIVEN-NAME1"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("TEST-SURNAME"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("2000-01-01"));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo("banklink"));
     }
 
 

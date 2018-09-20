@@ -2,6 +2,7 @@ package ee.ria.tara;
 
 
 import com.nimbusds.jose.jwk.JWKSet;
+import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import ee.ria.tara.config.IntegrationTest;
 import ee.ria.tara.config.TestTaraProperties;
@@ -33,8 +34,7 @@ import java.util.Map;
 import static ee.ria.tara.config.TaraTestStrings.OIDC_DEF_SCOPE;
 import static ee.ria.tara.steps.IdCard.submitIdCardLogin;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.Matchers.*;
 
 @SpringBootTest(classes = IdCardTest.class)
 @Category(IntegrationTest.class)
@@ -73,13 +73,13 @@ public class IdCardTest extends TestsBase {
     public void validLoginWithEsteid2018Certificate() throws Exception {
         Response oidcResponse = IdCard.authenticateWithIdCard(flow, "38001085718.pem", OIDC_DEF_SCOPE, "et");
         String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        SignedJWT signedJWT = Steps.verifyTokenAndReturnSignedJwtObject(flow, token);
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
 
-        assertEquals("EE38001085718", signedJWT.getJWTClaimsSet().getSubject());
-        assertEquals("JAAK-KRISTJAN", signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("given_name"));
-        assertEquals("JÕEORG", signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("family_name"));
-        assertEquals("1980-01-08", signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"));
-        assertEquals("idcard", signedJWT.getJWTClaimsSet().getStringArrayClaim("amr")[0]);
+        assertThat(claims.getSubject(), equalTo("EE38001085718"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo("JAAK-KRISTJAN"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("JÕEORG"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("1980-01-08"));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo("idcard"));
     }
 
     @Test
