@@ -3,6 +3,7 @@ package ee.ria.tara.steps;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jwt.SignedJWT;
 import ee.ria.tara.model.OpenIdConnectFlow;
+import ee.ria.tara.utils.AllureRestAssuredFormParam;
 import ee.ria.tara.utils.EidasResponseDataUtils;
 import ee.ria.tara.utils.OpenIdConnectUtils;
 import ee.ria.tara.utils.ResponseBuilderBase;
@@ -47,7 +48,7 @@ public class Eidas {
     public static Response getEidasSamlRequest(OpenIdConnectFlow flow, String personCountry, String execution) {
         Response response = given()
                 .filter(flow.getCookieFilter())
-                .filter(new AllureRestAssured()).relaxedHTTPSValidation()
+                .filter(new AllureRestAssuredFormParam()).relaxedHTTPSValidation()
                 .formParam("execution", execution)
                 .formParam("_eventId", "eidassubmit")
                 .formParam("country", personCountry)
@@ -67,7 +68,7 @@ public class Eidas {
 
         return given()
                 .filter(flow.getCookieFilter())
-                .filter(new AllureRestAssured()).relaxedHTTPSValidation()
+                .filter(new AllureRestAssuredFormParam()).relaxedHTTPSValidation()
                 .formParam("country", country)
                 .formParam("RelayState", relayState)
                 .formParam("SAMLRequest", samlRequest)
@@ -81,7 +82,7 @@ public class Eidas {
     public static String returnEidasResponse(OpenIdConnectFlow flow, String samlResponse, String relayState) {
         Response response = given().
                 filter(flow.getCookieFilter())
-                .filter(new AllureRestAssured()).relaxedHTTPSValidation()
+                .filter(new AllureRestAssuredFormParam()).relaxedHTTPSValidation()
                 .formParam("RelayState", relayState)
                 .formParam("SAMLResponse", samlResponse)
                 .when()
@@ -95,7 +96,7 @@ public class Eidas {
 
         return given()
                 .filter(flow.getCookieFilter())
-                .filter(new AllureRestAssured()).relaxedHTTPSValidation()
+                .filter(new AllureRestAssuredFormParam()).relaxedHTTPSValidation()
                 .formParam("RelayState", relayState)
                 .formParam("SAMLResponse", samlResponse)
                 .when()
@@ -107,7 +108,7 @@ public class Eidas {
     public static Response returnEidasErrorResponse(OpenIdConnectFlow flow, String samlResponse, String relayState) {
         Response response = given()
                 .filter(flow.getCookieFilter())
-                .filter(new AllureRestAssured()).relaxedHTTPSValidation()
+                .filter(new AllureRestAssuredFormParam()).relaxedHTTPSValidation()
                 .formParam("RelayState", relayState)
                 .formParam("SAMLResponse", samlResponse)
                 .when()
@@ -121,7 +122,7 @@ public class Eidas {
 
         return given()
                 .filter(flow.getCookieFilter())
-                .filter(new AllureRestAssured()).relaxedHTTPSValidation()
+                .filter(new AllureRestAssuredFormParam()).relaxedHTTPSValidation()
                 .formParam("RelayState", relayState)
                 .formParam("SAMLResponse", samlResponse)
                 .when()
@@ -133,7 +134,7 @@ public class Eidas {
     public static Response returnEidasFailureResponse(OpenIdConnectFlow flow, String samlResponse, String relayState) {
         return given()
                 .filter(flow.getCookieFilter())
-                .filter(new AllureRestAssured()).relaxedHTTPSValidation()
+                .filter(new AllureRestAssuredFormParam()).relaxedHTTPSValidation()
                 .formParam("RelayState", relayState)
                 .formParam("SAMLResponse", samlResponse)
                 .when()

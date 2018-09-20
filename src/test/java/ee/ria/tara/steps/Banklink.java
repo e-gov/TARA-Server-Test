@@ -1,6 +1,7 @@
 package ee.ria.tara.steps;
 
 import ee.ria.tara.model.OpenIdConnectFlow;
+import ee.ria.tara.utils.AllureRestAssuredFormParam;
 import io.qameta.allure.Step;
 import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.response.Response;
@@ -36,7 +37,7 @@ public class Banklink {
     public static Response submitBanklink(OpenIdConnectFlow flow, String execution, String bank) {
         return given()
                 .filter(flow.getCookieFilter()).relaxedHTTPSValidation()
-                .filter(new AllureRestAssured())
+                .filter(new AllureRestAssuredFormParam())
                 .formParam("execution", execution)
                 .formParam("_eventId", "banksubmit")
                 .formParam("geolocation", "")

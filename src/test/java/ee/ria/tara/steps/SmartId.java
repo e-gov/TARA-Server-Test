@@ -1,6 +1,7 @@
 package ee.ria.tara.steps;
 
 import ee.ria.tara.model.OpenIdConnectFlow;
+import ee.ria.tara.utils.AllureRestAssuredFormParam;
 import io.qameta.allure.Step;
 import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.response.Response;
@@ -37,7 +38,7 @@ public class SmartId {
     public static Response submitSmartIdLogin(OpenIdConnectFlow flow, String idCode, String execution, String location) {
         return given()
                 .filter(flow.getCookieFilter())
-                .filter(new AllureRestAssured())
+                .filter(new AllureRestAssuredFormParam())
                 .relaxedHTTPSValidation()
                 .formParam("execution", execution)
                 .formParam("_eventId", "smartIdSubmit")
@@ -57,7 +58,7 @@ public class SmartId {
             Thread.sleep(intervalMillis);
             Response response = given()
                     .filter(flow.getCookieFilter())
-                    .filter(new AllureRestAssured())
+                    .filter(new AllureRestAssuredFormParam())
                     .relaxedHTTPSValidation()
                     .redirects().follow(false)
                     .formParam("execution", execution)
@@ -100,7 +101,7 @@ public class SmartId {
             Thread.sleep(intervalMillis);
             Response response = given()
                     .filter(flow.getCookieFilter())
-                    .filter(new AllureRestAssured())
+                    .filter(new AllureRestAssuredFormParam())
                     .relaxedHTTPSValidation()
                     .redirects().follow(false)
                     .formParam("execution", execution)

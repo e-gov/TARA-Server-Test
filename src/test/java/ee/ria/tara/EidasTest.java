@@ -228,32 +228,6 @@ public class EidasTest extends TestsBase {
 
     @Test
     public void eidas3_eidasAcrValueHigherLoaReturnedThanAskedShouldReturnSuccess() throws Exception {
-        /*Map<String, String> formParams = new HashMap<String, String>();
-        formParams.put("scope", "openid");
-        formParams.put("response_type", "code");
-        formParams.put("client_id", testTaraProperties.getClientId());
-        formParams.put("redirect_uri", testTaraProperties.getTestRedirectUri());
-        formParams.put("lang", "et");
-        formParams.put("acr_values", OIDC_ACR_VALUES_LOW);
-
-
-        String execution = getAuthenticationMethodsPageWithParams(formParams).getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
-        Response response = getEidasSamlRequest(DEF_COUNTRY, execution);
-        String relayState = response.htmlPath().getString("**.findAll { it.@name == 'RelayState' }[0].@value");
-        //Here we need to simulate a response from foreign country eIDAS Node
-
-        String samlResponse = getBase64SamlResponseMinimalAttributes(response.getBody().asString(), DEFATTR_FIRST, DEFATTR_FAMILY, DEFATTR_PNO, DEFATTR_DATE, LOA_HIGH);
-
-        String authorizationCode = getAuthorizationCode(returnEidasResponse(samlResponse, relayState));
-        SignedJWT signedJWT = verifyTokenAndReturnSignedJwtObject(getIdToken(authorizationCode));
-
-        assertEquals("EE30011092212", signedJWT.getJWTClaimsSet().getSubject());
-        assertEquals(DEFATTR_FIRST, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("given_name"));
-        assertEquals(DEFATTR_FAMILY, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("family_name"));
-        assertEquals(DEFATTR_DATE, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"));
-        assertEquals(OIDC_AMR_EIDAS, signedJWT.getJWTClaimsSet().getStringArrayClaim("amr")[0]);
-        assertEquals(OIDC_ACR_VALUES_HIGH, signedJWT.getJWTClaimsSet().getClaim("acr"));*/
-
         Response response = Eidas.initiateEidasAuthentication(flow, DEF_COUNTRY, OIDC_DEF_SCOPE, OIDC_ACR_VALUES_LOW);
         String relayState = response.htmlPath().getString("**.findAll { it.@name == 'RelayState' }[0].@value");
 
@@ -275,27 +249,6 @@ public class EidasTest extends TestsBase {
 
     @Test
     public void eidas3_eidasAcrValueLowerLoaReturnedThanAskedShouldReturnError() throws Exception {
-        /*Map<String, String> formParams = new HashMap<String, String>();
-        formParams.put("scope", "openid");
-        formParams.put("response_type", "code");
-        formParams.put("client_id", testTaraProperties.getClientId());
-        formParams.put("redirect_uri", testTaraProperties.getTestRedirectUri());
-        formParams.put("lang", "et");
-        formParams.put("acr_values", OIDC_ACR_VALUES_SUBSTANTIAL);
-
-        String execution = getAuthenticationMethodsPageWithParams(formParams).getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
-        Response response = getEidasSamlRequest(DEF_COUNTRY, execution);
-        String relayState = response.htmlPath().getString("**.findAll { it.@name == 'RelayState' }[0].@value");
-
-        //Here we need to simulate a response from foreign country eIDAS Node
-        String samlResponse = getBase64SamlResponseMinimalAttributes(response.getBody().asString(), DEFATTR_FIRST, DEFATTR_FAMILY, DEFATTR_PNO, DEFATTR_DATE, LOA_LOW);
-
-        Response errorResponse = returnEidasFailureResponse(samlResponse, relayState);
-
-        String error = errorResponse.htmlPath().getString("**.findAll { it.@class=='sub-title' }");
-
-        assertEquals("An unexpected error has occurred", error);*/
-
         Response response = Eidas.initiateEidasAuthentication(flow, DEF_COUNTRY, OIDC_DEF_SCOPE, OIDC_ACR_VALUES_SUBSTANTIAL);
         String relayState = response.htmlPath().getString("**.findAll { it.@name == 'RelayState' }[0].@value");
 

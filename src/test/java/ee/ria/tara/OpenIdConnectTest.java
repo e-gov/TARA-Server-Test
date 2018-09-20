@@ -75,7 +75,6 @@ public class OpenIdConnectTest extends TestsBase {
     }
 
     public void initialize() throws IOException, ParseException, InitializationException {
-        System.out.println("Initializing");
         jwkSet = JWKSet.load(new URL(testTaraProperties.getFullJwksUrl()));
         tokenIssuer = getIssuer(testTaraProperties.getTargetUrl() + testTaraProperties.getConfigurationUrl());
         Security.addProvider(new BouncyCastleProvider());
@@ -171,8 +170,6 @@ public class OpenIdConnectTest extends TestsBase {
         String authorizationCode = OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location"));
         Response response = Requests.postToTokenEndpoint(flow, authorizationCode + "a");
 
-        //String authorizationCode = authenticateWithMobileId("00000766", "60001019906", 3000, OIDC_DEF_SCOPE);
-        //Response response = postToTokenEndpoint(authorizationCode + "a");
         assertEquals(400, response.statusCode());
         assertEquals("invalid_grant", response.body().jsonPath().getString("error"));
     }
@@ -250,21 +247,11 @@ public class OpenIdConnectTest extends TestsBase {
         Response response = Requests.postToTokenEndpoint(flow, params);
         assertEquals(400, response.statusCode());
         assertEquals("unsupported_grant_type", response.body().jsonPath().getString("error"));
-
-       /* authenticateWithMobileId("00000766", "60001019906", 3000, OIDC_DEF_SCOPE);
-        Map<String, String> params = new HashMap<String, String>();
-        params.put("grant_type", "code");
-        params.put("redirect_uri", testTaraProperties.getTestRedirectUri());
-        Response response = postToTokenEndpoint(params);
-        assertEquals(400, response.statusCode());
-        assertEquals("unsupported_grant_type", response.body().jsonPath().getString("error"));*/
     }
 
     @Test
     public void oidc2_stateAndNonceInAuthorizationCodeResponseShouldMatchExpected() throws Exception {
         Response oidcResponse = MobileId.authenticateWithMobileId(flow, "00000766", "60001019906", 3000, OIDC_DEF_SCOPE);
-        //String execution = getAuthenticationMethodsPage(OIDC_DEF_SCOPE).getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
-        //String location = getAuthorizationCodeResponseWithMobileId("00000766", "60001019906", 3000, execution);
         Map<String, String> params = getQueryParams(oidcResponse.getHeader("location"));
         assertEquals(params.get("nonce"), flow.getNonce());
         assertEquals(params.get("state"), flow.getState());
@@ -272,8 +259,6 @@ public class OpenIdConnectTest extends TestsBase {
 
     @Test
     public void oidc2_stateAndNonceInIdTokenResponseShouldMatchExpected() throws Exception {
-        // String authorizationCode = authenticateWithMobileId("00000766", "60001019906", 3000, OIDC_DEF_SCOPE);
-        //SignedJWT token = SignedJWT.parse(getIdToken(authorizationCode));
         Response oidcResponse = MobileId.authenticateWithMobileId(flow, "00000766", "60001019906", 3000, OIDC_DEF_SCOPE);
         String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
         SignedJWT signedJWT = SignedJWT.parse(token);

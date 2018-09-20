@@ -1,6 +1,7 @@
 package ee.ria.tara.steps;
 
 import ee.ria.tara.model.OpenIdConnectFlow;
+import ee.ria.tara.utils.AllureRestAssuredFormParam;
 import ee.ria.tara.utils.OpenIdConnectUtils;
 import io.qameta.allure.Step;
 import io.qameta.allure.restassured.AllureRestAssured;
@@ -39,7 +40,7 @@ public class IdCard {
     public static Response submitIdCardLogin(OpenIdConnectFlow flow, String execution, String location) {
         return given()
                 .filter(flow.getCookieFilter())
-                .filter(new AllureRestAssured())
+                .filter(new AllureRestAssuredFormParam())
                 .relaxedHTTPSValidation()
                 .formParam("execution", execution)
                 .formParam("_eventId", "idsubmit")
