@@ -1,15 +1,27 @@
 package ee.ria.tara;
 
 
-import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jwt.SignedJWT;
 import ee.ria.tara.config.IntegrationTest;
-import org.junit.Ignore;
+import ee.ria.tara.config.TestTaraProperties;
+import ee.ria.tara.model.OpenIdConnectFlow;
+import ee.ria.tara.steps.MobileId;
+import ee.ria.tara.steps.Requests;
+import ee.ria.tara.steps.Steps;
+import ee.ria.tara.utils.OpenIdConnectUtils;
+import io.restassured.response.Response;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.io.ResourceLoader;
 
-import java.net.URISyntaxException;
+import java.io.IOException;
+import java.net.URL;
+import java.security.Security;
 import java.text.ParseException;
 
 import static ee.ria.tara.config.TaraTestStrings.OIDC_DEF_SCOPE;
@@ -20,71 +32,87 @@ import static org.junit.Assert.assertEquals;
 @SpringBootTest(classes = MobileIdTest.class)
 @Category(IntegrationTest.class)
 public class MobileIdTest extends TestsBase {
+    @Autowired
+    private ResourceLoader resourceLoader;
+    private static boolean setupComplete = false;
+    private OpenIdConnectFlow flow;
 
-    @Ignore
-    @Test
-    public void mob1_mobileIdAuthenticationSuccess() throws InterruptedException, URISyntaxException, ParseException, JOSEException {
-        String authorizationCode = authenticateWithMobileId("00000266", "60001019896", 2000, OIDC_DEF_SCOPE);
-        SignedJWT signedJWT = verifyTokenAndReturnSignedJwtObject(getIdToken(authorizationCode));
 
-        assertEquals("EE60001019896", signedJWT.getJWTClaimsSet().getSubject());
-        assertEquals("MARY ÄNN", signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("given_name"));
-        assertEquals("O’CONNEŽ-ŠUSLIK TESTNUMBER", signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("family_name"));
-        assertEquals("+37200000266", signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("mobile_number"));
-        assertEquals("2000-01-01", signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"));
+    @Before
+    public void setUp() throws IOException, ParseException {
+        if (!setupComplete) {
+            initialize();
+            setupComplete = true;
+        }
+        flow = new OpenIdConnectFlow();
+        setupFlow(flow, testTaraProperties);
+    }
+
+    void setupFlow(OpenIdConnectFlow flow, TestTaraProperties properties) throws IOException, ParseException {
+        flow.getOpenIDProvider().setJwkSet(jwkSet);
+        flow.getOpenIDProvider().setIssuer(tokenIssuer);
+        flow.setResourceLoader(resourceLoader);
+        flow.setup(properties);
+    }
+
+    public void initialize() throws IOException, ParseException {
+        jwkSet = JWKSet.load(new URL(testTaraProperties.getFullJwksUrl()));
+        tokenIssuer = getIssuer(testTaraProperties.getTargetUrl() + testTaraProperties.getConfigurationUrl());
+        Security.addProvider(new BouncyCastleProvider());
     }
 
     @Test
-    public void mob1_mobileIdAuthenticationSuccessWithRealLifeDelay() throws InterruptedException, URISyntaxException, ParseException, JOSEException {
-        String authorizationCode = authenticateWithMobileId("00000766", "60001019906", 7000, OIDC_DEF_SCOPE);
-        SignedJWT signedJWT = verifyTokenAndReturnSignedJwtObject(getIdToken(authorizationCode));
+    public void mob1_mobileIdAuthenticationSuccessWithRealLifeDelay() throws Exception {
+        Response oidcResponse = MobileId.authenticateWithMobileId(flow, "00000766", "60001019906", 7000, OIDC_DEF_SCOPE);
+        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        SignedJWT signedJWT = Steps.verifyTokenAndReturnSignedJwtObject(flow, token);
 
         assertEquals("EE60001019906", signedJWT.getJWTClaimsSet().getSubject());
         assertEquals("MARY ÄNN", signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("given_name"));
         assertEquals("O’CONNEŽ-ŠUSLIK TESTNUMBER", signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("family_name"));
-        assertEquals("+37200000766", signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("mobile_number"));
+        assertEquals(null, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("mobile_number"));
         assertEquals("2000-01-01", signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"));
     }
 
     @Test
     public void mob2_mobileIdAuthenticationMidNotActivated() {
-        String errorMessage = authenticateWithMobileIdError("00000366", "60001019928");
+        String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdError(flow, "00000366", "60001019928"));
         assertThat(errorMessage, startsWith("Mobiil-ID teenuses esinevad tehnilised tõrked. Palun proovige mõne aja pärast uuesti."));
     }
 
     @Test
     public void mob2_mobileIdAuthenticationUserCertificatesRevoked() {
-        String errorMessage = authenticateWithMobileIdError("00000266", "60001019939");
-        assertThat(errorMessage, startsWith("Autentimine Mobiil-ID-ga ei õnnestunud. Testi oma Mobiil-ID toimimist haldusvahendis: http://www.id.ee/index.php?id=35636"));
+        String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdError(flow, "00000266", "60001019939"));
+        assertThat(errorMessage, startsWith("Autentimine Mobiil-ID-ga ei õnnestunud. Testi oma Mobiil-ID toimimist DigiDoc3 kliendis: http://www.id.ee/index.php?id=35636"));
     }
 
     @Test
-    public void mob2_mobileIdAuthenticationRequestToPhoneFailed() throws URISyntaxException, InterruptedException {
-        String errorMessage = authenticateWithMobileIdPollError("07110066", "60001019947", 500);
+    public void mob2_mobileIdAuthenticationRequestToPhoneFailed() throws Exception {
+        String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdPollError(flow, "07110066", "60001019947", 500));
         assertThat(errorMessage, startsWith("Teie mobiiltelefoni ei saa Mobiil-ID autentimise sõnumeid saata."));
     }
 
     @Test
-    public void mob2_mobileIdAuthenticationTechnicalError() throws URISyntaxException, InterruptedException {
-        String errorMessage = authenticateWithMobileIdPollError("00000666", "60001019961", 3000);
-        assertThat(errorMessage, startsWith("Autentimine Mobiil-ID-ga ei õnnestunud. Testi oma Mobiil-ID toimimist haldusvahendis: http://www.id.ee/index.php?id=35636"));
+    public void mob2_mobileIdAuthenticationTechnicalError() throws Exception {
+        String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdPollError(flow, "00000666", "60001019961", 3000));
+        assertThat(errorMessage, startsWith("Autentimine Mobiil-ID-ga ei õnnestunud. Testi oma Mobiil-ID toimimist DigiDoc3 kliendis: http://www.id.ee/index.php?id=35636"));
     }
 
     @Test
-    public void mob2_mobileIdAuthenticationSimApplicationError() throws URISyntaxException, InterruptedException {
-        String errorMessage = authenticateWithMobileIdPollError("01200266", "60001019972", 1000);
+    public void mob2_mobileIdAuthenticationSimApplicationError() throws Exception {
+        String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdPollError(flow, "01200266", "60001019972", 1000));
         assertThat(errorMessage, startsWith("Teie mobiiltelefoni SIM kaardiga tekkis tõrge."));
     }
 
     @Test
-    public void mob2_mobileIdAuthenticationPhoneNotInNetwork() throws URISyntaxException, InterruptedException {
-        String errorMessage = authenticateWithMobileIdPollError("13100266", "60001019983", 1000);
+    public void mob2_mobileIdAuthenticationPhoneNotInNetwork() throws Exception {
+        String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdPollError(flow, "13100266", "60001019983", 1000));
         assertThat(errorMessage, startsWith("Teie mobiiltelefon on levialast väljas."));
     }
 
     @Test
-    public void mob3_mobileIdAuthenticationUserCancels() throws URISyntaxException, InterruptedException {
-        String errorMessage = authenticateWithMobileIdPollError("01100266", "60001019950", 1000);
+    public void mob3_mobileIdAuthenticationUserCancels() throws Exception {
+        String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdPollError(flow, "01100266", "60001019950", 1000));
         assertThat(errorMessage, startsWith("Autentimine on katkestatud."));
     }
 
@@ -93,8 +121,8 @@ public class MobileIdTest extends TestsBase {
      */
     @Test
     public void mob3_mobileIdAuthenticationInvalidIdCode() {
-        String errorMessage = authenticateWithMobileIdInvalidInputError("00000766","66", 1000);
-        assertEquals("Kasutajal pole Mobiil-ID lepingut.Intsidendi number:", errorMessage);
+        String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdError(flow, "66", "00000766"));
+        assertThat(errorMessage, startsWith("Kasutajal pole Mobiil-ID lepingut"));
     }
 
     /**
@@ -102,8 +130,8 @@ public class MobileIdTest extends TestsBase {
      */
     @Test
     public void mob3_mobileIdAuthenticationInvalidPhoneNumber() {
-        String errorMessage = authenticateWithMobileIdInvalidInputError("123456789123","60001019906", 1000);
-        assertEquals("Kasutajal pole Mobiil-ID lepingut.Intsidendi number:", errorMessage);
+        String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdError(flow, "123456789123", "60001019906"));
+        assertThat(errorMessage, startsWith("Kasutajal pole Mobiil-ID lepingut.Intsidendi number:"));
     }
 
     /**
@@ -111,8 +139,8 @@ public class MobileIdTest extends TestsBase {
      */
     @Test
     public void mob3_mobileIdAuthenticationNoMobileNo() {
-        String errorMessage = authenticateWithMobileIdInvalidInputError("","60001019906", 1000);
-        assertEquals("Telefoninumber ei ole korrektne.Intsidendi number:", errorMessage);
+        String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdError(flow, "", "60001019906"));
+        assertThat(errorMessage, startsWith("Telefoninumber ei ole korrektne.Intsidendi number:"));
     }
 
     /**
@@ -120,8 +148,8 @@ public class MobileIdTest extends TestsBase {
      */
     @Test
     public void mob3_mobileIdAuthenticationNoIdCode() {
-        String errorMessage = authenticateWithMobileIdInvalidInputError("00000766","", 1000);
-        assertEquals("Isikukood ei ole korrektne.Intsidendi number:", errorMessage);
+        String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdError(flow, "00000766", ""));
+        assertThat(errorMessage, startsWith("Isikukood ei ole korrektne.Intsidendi number:"));
     }
 
     /**
@@ -129,7 +157,8 @@ public class MobileIdTest extends TestsBase {
      */
     @Test
     public void mob3_mobileIdAuthenticationNoParameters() {
-        String errorMessage = authenticateWithMobileIdInvalidInputError("","", 1000);
-        assertEquals("Isikukood ei ole korrektne.Intsidendi number:", errorMessage);
+        String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdError(flow, "", ""));
+        assertThat(errorMessage, startsWith("Isikukood ei ole korrektne.Intsidendi number:"));
     }
 }
+

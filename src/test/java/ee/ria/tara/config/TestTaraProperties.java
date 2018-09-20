@@ -29,6 +29,9 @@ public class TestTaraProperties {
     private String configurationUrl;
     private String casClientId;
     private String banklinkMockUrl;
+    private String backendUrl;
+    private String domainName;
+
 
 
     public String getEidasNodeResponseUrl() {
@@ -209,5 +212,21 @@ public class TestTaraProperties {
 
     public void setBanklinkMockUrl(String banklinkMockUrl) {
         this.banklinkMockUrl = banklinkMockUrl;
+    }
+
+    public String getBackendUrl() {
+        return backendUrl;
+    }
+
+    public void setBackendUrl(String backendUrl) {
+        this.backendUrl = backendUrl;
+    }
+
+    public String getDomainName() {
+        return domainName;
+    }
+
+    public void setDomainName(String domainName) {
+        this.domainName = domainName;
     }
 }
