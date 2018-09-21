@@ -55,9 +55,14 @@ public class IdCard {
 
     @Step("{flow.endUser}Certificate POST to backend /idcard")
     public static Response idcard(OpenIdConnectFlow flow, String certificate) {
-        Allure.addLinks(new io.qameta.allure.model.Link()
-                .withName("View Certificate in lapo.it")
-                .withUrl("https://lapo.it/asn1js/#" + certificate));
+        try {
+            Allure.addLinks(new io.qameta.allure.model.Link()
+                    .withName("View Certificate in lapo.it")
+                    .withUrl("https://lapo.it/asn1js/#" + certificate));
+        } catch (Exception e) {
+            //NullPointerException when running test from IntelliJ
+        }
+
         String jSessionId = "";
         for (Cookie cookie : flow.getCookieFilter().cookieStore.getCookies()) {
             if (cookie.getName().equalsIgnoreCase("JSESSIONID")) {
@@ -69,7 +74,7 @@ public class IdCard {
                 .relaxedHTTPSValidation()
                 .when()
                 .redirects().follow(false)
-                .get(flow.getTestProperties().getBackendUrl()+"/idcard")
+                .get(flow.getTestProperties().getBackendUrl() + "/idcard")
                 .then().extract().response();
     }
 }

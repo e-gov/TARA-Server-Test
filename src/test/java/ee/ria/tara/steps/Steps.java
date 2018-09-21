@@ -28,9 +28,14 @@ public class Steps {
         //TODO: single attachment
         addJsonAttachment("Header", signedJWT.getHeader().toJSONObject().toString());
         addJsonAttachment("Payload", signedJWT.getJWTClaimsSet().toJSONObject().toString());
-        Allure.addLinks(new io.qameta.allure.model.Link()
-                .withName("View Token in jwt.io")
-                .withUrl("https://jwt.io/#debugger-io?token=" + token));
+        try {
+            Allure.addLinks(new io.qameta.allure.model.Link()
+                    .withName("View Token in jwt.io")
+                    .withUrl("https://jwt.io/#debugger-io?token=" + token));
+        } catch (Exception e) {
+            //NullPointerException when running test from IntelliJ
+        }
+
         assertThat("Token Signature is not valid!", OpenIdConnectUtils.isTokenSignatureValid(flow, signedJWT), is(true));
         assertThat(signedJWT.getJWTClaimsSet().getAudience().get(0), equalTo(flow.getRelyingParty().getClientId()));
         assertThat(signedJWT.getJWTClaimsSet().getIssuer(), equalTo(flow.getOpenIDProvider().getIssuer()));
