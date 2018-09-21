@@ -81,6 +81,32 @@ public class IdCardTest extends TestsBase {
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("1980-01-08"));
         assertThat(claims.getStringArrayClaim("amr")[0], equalTo("idcard"));
     }
+    @Test
+    @Feature("ID-1")
+    public void validLoginWithEsteid2015RsaCertificate() throws Exception {
+        Response oidcResponse = IdCard.authenticateWithIdCard(flow, "37101010021.pem", OIDC_DEF_SCOPE, "et");
+        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
+
+        assertThat(claims.getSubject(), equalTo("EE37101010021"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo("IGOR"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("ŽAIKOVSKI"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("1971-01-01"));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo("idcard"));
+    }
+    @Test
+    @Feature("ID-1")
+    public void validLoginWithEsteid2015EccCertificate() throws Exception {
+        Response oidcResponse = IdCard.authenticateWithIdCard(flow, "47101010033.pem", OIDC_DEF_SCOPE, "et");
+        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
+
+        assertThat(claims.getSubject(), equalTo("EE47101010033"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo("MARI-LIIS"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("MÄNNIK"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("1971-01-01"));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo("idcard"));
+    }
 
     @Test
     @Ignore
