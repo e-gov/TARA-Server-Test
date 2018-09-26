@@ -32,7 +32,7 @@ class OpenIdConnectFlow {
     private OpenIDProvider openIDProvider = new OpenIDProvider();
     private RelyingParty relyingParty = new RelyingParty();
 
-    public void setup(TestTaraProperties properties) throws IOException, ParseException {
+    public void setup(TestTaraProperties properties)  {
         testProperties = properties;
         relyingParty.setClientId(properties.getClientId());
         relyingParty.setSecret(properties.getClientSecret());
@@ -41,6 +41,8 @@ class OpenIdConnectFlow {
         openIDProvider.setAuthorizeUrl(properties.getTargetUrl() + properties.getAuthorizeUrl());
         openIDProvider.setTokenUrl(properties.getTargetUrl() + properties.getTokenUrl());
         openIDProvider.setLoginUrl(properties.getTargetUrl() + properties.getLoginUrl());
+        openIDProvider.setBackendUrl(properties.getBackendUrl());
+
     }
 
     public void updateSessionId(String sessionId) {

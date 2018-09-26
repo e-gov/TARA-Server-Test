@@ -1,4 +1,6 @@
 target
+allure-results
+.allure
 .idea
 *.iml
 **/.DS_Store

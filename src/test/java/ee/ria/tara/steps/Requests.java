@@ -4,11 +4,14 @@ import ee.ria.tara.model.OpenIdConnectFlow;
 import ee.ria.tara.utils.OpenIdConnectUtils;
 import io.qameta.allure.Step;
 import io.qameta.allure.restassured.AllureRestAssured;
+import io.restassured.http.Header;
 import io.restassured.response.Response;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.http.cookie.Cookie;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Map;
 
@@ -31,9 +34,10 @@ public class Requests {
                 .then()
                 .extract().response();
     }
+
     @Step("Get token")
     //Relying Party retreives ID token
-    public static Response postToTokenEndpoint(OpenIdConnectFlow flow, Map<String,?> parameters) {
+    public static Response postToTokenEndpoint(OpenIdConnectFlow flow, Map<String, ?> parameters) {
         return given()
                 .filter(new AllureRestAssured())
                 .relaxedHTTPSValidation()
@@ -60,6 +64,7 @@ public class Requests {
                 .get(flow.getOpenIDProvider().getAuthorizeUrl())
                 .then().extract().response();
     }
+
     @Step("{flow.endUser}OpenID Connect authentication request")
     public static Response openIdConnectAuthenticationRequestWithoutStateAndNonce(OpenIdConnectFlow flow, Map<String, ?> values) {
         return given()
@@ -144,7 +149,7 @@ public class Requests {
     public static Response getAuthenticationMethodsPageWithScopeAndAcr(OpenIdConnectFlow flow, String scope, Object acr) throws InterruptedException, URISyntaxException, IOException {
         Map queryParams = OpenIdConnectUtils.getAuthorizationRequestData(flow);
         queryParams.put("scope", scope);
-        if (acr!= null) {
+        if (acr != null) {
             queryParams.put("acr_values", acr);
         }
         Response authenticationResponse = Requests.openIdConnectAuthenticationRequest(flow, queryParams); //getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value")
@@ -152,15 +157,17 @@ public class Requests {
                 .getHeader("location");
         return Requests.followRedirect(flow, location);
     }
+
     @Step("{flow.endUser}Open TARA Login Page with query parameters")
-    public static Response getAuthenticationMethodsPageWithParameters(OpenIdConnectFlow flow, Map<String,?> queryParams) throws InterruptedException, URISyntaxException, IOException {
+    public static Response getAuthenticationMethodsPageWithParameters(OpenIdConnectFlow flow, Map<String, ?> queryParams) throws InterruptedException, URISyntaxException, IOException {
         Response authenticationResponse = Requests.openIdConnectAuthenticationRequest(flow, queryParams); //getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value")
         String location = authenticationResponse.then().extract().response()
                 .getHeader("location");
         return Requests.followRedirect(flow, location);
     }
+
     @Step("{flow.endUser}Open TARA Login Page with missing state or nonce")
-    public static Response getAuthenticationMethodsPageWithoutStateOrNonce(OpenIdConnectFlow flow, Map<String,?> queryParams) throws InterruptedException, URISyntaxException, IOException {
+    public static Response getAuthenticationMethodsPageWithoutStateOrNonce(OpenIdConnectFlow flow, Map<String, ?> queryParams) throws InterruptedException, URISyntaxException, IOException {
         Response authenticationResponse = Requests.openIdConnectAuthenticationRequestWithoutStateAndNonce(flow, queryParams); //getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value")
         String location = authenticationResponse.then().extract().response()
                 .getHeader("location");

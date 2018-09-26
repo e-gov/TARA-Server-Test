@@ -65,7 +65,7 @@ public class IdCard {
 
         String jSessionId = "";
         for (Cookie cookie : flow.getCookieFilter().cookieStore.getCookies()) {
-            if (cookie.getName().equalsIgnoreCase("JSESSIONID")) {
+            if (cookie.getName().equalsIgnoreCase("JSESSIONID") && cookie.getPath().equalsIgnoreCase("/")) {
                 jSessionId = cookie.getValue();
             }
         }
@@ -74,7 +74,29 @@ public class IdCard {
                 .relaxedHTTPSValidation()
                 .when()
                 .redirects().follow(false)
-                .get(flow.getTestProperties().getBackendUrl() + "/idcard")
+                .get(flow.getOpenIDProvider().getBackendUrl() + "/idcard")
                 .then().extract().response();
+    }
+
+    @Step("{flow.endUser}Authenticates with ID-card")
+    public static Response authenticateWithIdAndReceiveError(OpenIdConnectFlow flow, String certificateFile, String scope, String language) throws InterruptedException, URISyntaxException, IOException {
+        Map<String, String> formParams = new HashMap<String, String>();
+        formParams.put("scope", scope);
+        formParams.put("response_type", "code");
+        formParams.put("client_id", flow.getRelyingParty().getClientId());
+        formParams.put("redirect_uri", flow.getRelyingParty().getRedirectUri());
+        formParams.put("lang", language);
+        Response authenticationResponse = Requests.openIdConnectAuthenticationRequest(flow, formParams); //getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value")
+        String location = authenticationResponse.then().extract().response()
+                .getHeader("location");
+        Response taraLoginPageResponse = Requests.followRedirect(flow, location);
+        String execution = taraLoginPageResponse.getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
+        Response idcardResponse = idcard(flow, OpenIdConnectUtils.getResourceFileAsString(flow.getResourceLoader(), certificateFile));
+        flow.updateSessionId(idcardResponse.cookie("JSESSIONID"));
+        return submitIdCardLogin(flow, execution, location);
+    }
+    public static String extractError(Response response) {
+        return response.then().extract().response()
+                .htmlPath().getString("**.findAll { it.@class=='error-box' }").substring(4);
     }
 }

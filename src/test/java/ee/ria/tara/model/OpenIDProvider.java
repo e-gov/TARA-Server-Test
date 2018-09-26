@@ -10,6 +10,7 @@ public class OpenIDProvider {
     private String authorizeUrl;
     private String tokenUrl;
     private String loginUrl;
+    private String backendUrl;
 
     //https://openid.net/specs/openid-connect-core-1_0.html#IDToken
     //Issuer Identifier for the Issuer of the response.

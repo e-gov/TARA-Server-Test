@@ -31,8 +31,9 @@ public class TestTaraProperties {
     private String banklinkMockUrl;
     private String backendUrl;
     private String domainName;
-
-
+    private String ocspTargetUrl;
+    private String ocspBackendUrl;
+    private String ocspMockUrl;
 
     public String getEidasNodeResponseUrl() {
         return eidasNodeResponseUrl;
@@ -147,7 +148,7 @@ public class TestTaraProperties {
     }
 
     public String getFullJwksUrl() {
-        return targetUrl+jwksUrl;
+        return targetUrl + jwksUrl;
     }
 
     public void setTargetUrl(String targetUrl) {
@@ -228,5 +229,29 @@ public class TestTaraProperties {
 
     public void setDomainName(String domainName) {
         this.domainName = domainName;
+    }
+
+    public String getOcspTargetUrl() {
+        return ocspTargetUrl;
+    }
+
+    public void setOcspTargetUrl(String ocspTargetUrl) {
+        this.ocspTargetUrl = ocspTargetUrl;
+    }
+
+    public String getOcspBackendUrl() {
+        return ocspBackendUrl;
+    }
+
+    public void setOcspBackendUrl(String ocspBackendUrl) {
+        this.ocspBackendUrl = ocspBackendUrl;
+    }
+
+    public String getOcspMockUrl() {
+        return ocspMockUrl;
+    }
+
+    public void setOcspMockUrl(String ocspMockUrl) {
+        this.ocspMockUrl = ocspMockUrl;
     }
 }

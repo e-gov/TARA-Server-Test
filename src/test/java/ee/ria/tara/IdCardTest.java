@@ -3,7 +3,6 @@ package ee.ria.tara;
 
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jwt.JWTClaimsSet;
-import com.nimbusds.jwt.SignedJWT;
 import ee.ria.tara.config.IntegrationTest;
 import ee.ria.tara.config.TestTaraProperties;
 import ee.ria.tara.model.OpenIdConnectFlow;
@@ -34,7 +33,8 @@ import java.util.Map;
 import static ee.ria.tara.config.TaraTestStrings.OIDC_DEF_SCOPE;
 import static ee.ria.tara.steps.IdCard.submitIdCardLogin;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
 
 @SpringBootTest(classes = IdCardTest.class)
 @Category(IntegrationTest.class)
@@ -81,6 +81,7 @@ public class IdCardTest extends TestsBase {
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("1980-01-08"));
         assertThat(claims.getStringArrayClaim("amr")[0], equalTo("idcard"));
     }
+
     @Test
     @Feature("ID-1")
     public void validLoginWithEsteid2015RsaCertificate() throws Exception {
@@ -94,6 +95,7 @@ public class IdCardTest extends TestsBase {
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("1971-01-01"));
         assertThat(claims.getStringArrayClaim("amr")[0], equalTo("idcard"));
     }
+
     @Test
     @Feature("ID-1")
     public void validLoginWithEsteid2015EccCertificate() throws Exception {
