@@ -147,7 +147,7 @@ public class EidasTest extends TestsBase {
         Response errorResponse = Eidas.returnEidasErrorResponse(flow, samlResponse, relayState);
         String error = errorResponse.htmlPath().getString("**.findAll { it.@class=='error-box' }").substring(4);
 
-        assertThat(error, startsWith("Autentimine eIDAS-ga ebaõnnestus."));
+        assertThat(error, startsWith("Autentimine ebaõnnestus"));
     }
 
     @Test
@@ -161,7 +161,7 @@ public class EidasTest extends TestsBase {
 
         String error = errorResponse.htmlPath().getString("**.findAll { it.@class=='error-box' }").substring(4);
 
-        assertThat(error, startsWith("Autentimine eIDAS-ga ebaõnnestus."));
+        assertThat(error, startsWith("Autentimine ebaõnnestus"));
     }
 
     @Test
