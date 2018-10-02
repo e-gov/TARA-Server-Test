@@ -61,7 +61,9 @@ Testidele parameetrite ette andmine käivitamisel:
 
 `./mvnw clean install -Dtest.tara.targetUrl=http://localhost:1881`
 
-a) IntelliJ-s üksiku testi Allure raporti genereerimiseks on vaja test käivitada läbi Maveni. Selle jaoks on hetkel vajalik [Maven Helper](https://plugins.jetbrains.com/plugin/7179-maven-helper) plugin.
+a) IntelliJ-s käivitamiseks on vajalik [Lombok plugin](https://plugins.jetbrains.com/plugin/6317-lombok-plugin)
+
+b) IntelliJ-s üksiku testi Allure raporti genereerimiseks on vaja test käivitada läbi Maveni. Selle jaoks on hetkel vajalik [Maven Helper](https://plugins.jetbrains.com/plugin/7179-maven-helper) plugin.
 
 5. Kontrolli testide tulemusi
 
