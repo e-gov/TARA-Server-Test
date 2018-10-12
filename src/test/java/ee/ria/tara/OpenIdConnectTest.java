@@ -211,8 +211,9 @@ public class OpenIdConnectTest extends TestsBase {
     public void oidc2_mandatoryClientIdMissingMustReturnError() throws Exception {
         Map queryParams = OpenIdConnectUtils.getAuthorizationRequestData(flow);
         queryParams.remove("client_id");
-        Response response = Requests.getAuthenticationMethodsPageWithParameters(flow, queryParams);
-        assertThat("client_id is mandatory parameter", response.body().asString(), startsWith("RESPONSE ERROR: invalid_client - No value found in the request for <client_id> parameter"));
+        Response response = Requests.openIdConnectAuthenticationRequest(flow, queryParams);
+        assertThat("No redirect is allowed without client id", response.getHeader("location"), isEmptyOrNullString());
+        assertThat("Generic error should be returned", response.body().htmlPath().getString("**.findAll { it.@class=='error-box' }").substring(4), startsWith("Kasutaja tuvastamisel tekkis ootamatu tehniline probleem.Intsidendi number:"));
     }
 
     @Test
@@ -229,6 +230,16 @@ public class OpenIdConnectTest extends TestsBase {
         queryParams.remove("redirect_uri");
         Response response = Requests.openIdConnectAuthenticationRequest(flow, queryParams);
         assertThat("Without redirect uri there is no redirection link", response.getHeader("location"), isEmptyOrNullString());
+        assertThat("Generic error should be returned", response.body().htmlPath().getString("**.findAll { it.@class=='error-box' }").substring(4), startsWith("Kasutaja tuvastamisel tekkis ootamatu tehniline probleem.Intsidendi number:"));
+    }
+
+    @Test //TODO: Error handling is changed with AUT-57
+    public void oidc2_unknownRedirectUriMustReturnError() {
+        Map queryParams = OpenIdConnectUtils.getAuthorizationRequestData(flow);
+        queryParams.put("redirect_uri", "some_random.url");
+        Response response = Requests.openIdConnectAuthenticationRequest(flow, queryParams);
+        assertThat("Without redirect uri there is no redirection link", response.getHeader("location"), isEmptyOrNullString());
+        assertThat("Generic error should be returned", response.body().htmlPath().getString("**.findAll { it.@class=='error-box' }").substring(4), startsWith("Kasutaja tuvastamisel tekkis ootamatu tehniline probleem.Intsidendi number:"));
     }
 
     @Test

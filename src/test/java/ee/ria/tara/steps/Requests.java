@@ -4,6 +4,7 @@ import ee.ria.tara.model.OpenIdConnectFlow;
 import ee.ria.tara.utils.OpenIdConnectUtils;
 import io.qameta.allure.Step;
 import io.qameta.allure.restassured.AllureRestAssured;
+import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.restassured.response.Response;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -59,6 +60,7 @@ public class Requests {
                 .queryParams(values)
                 .queryParam("state", flow.getState())
                 .queryParam("nonce", flow.getNonce())
+                .accept(ContentType.HTML)
                 .when()
                 .redirects().follow(false)
                 .get(flow.getOpenIDProvider().getAuthorizeUrl())
