@@ -26,7 +26,7 @@ public class Banklink {
         Response taraLoginPageResponse = Requests.followRedirect(flow, authenticationResponse.getHeader("location"));
         String execution = taraLoginPageResponse.getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
         Map execution2 = submitBanklink(flow, execution, bank)
-                .htmlPath().getMap("**.find { it.@id == 'bankRedirectForm' }.div.input.collectEntries { [it.@name, it.@value] }");
+                .htmlPath().getMap("**.find { it.@id == 'authenticationRedirectForm' }.div.input.collectEntries { [it.@name, it.@value] }");
 
         Map<String, String> newMap = new HashMap<>();
         execution2.forEach((k, v) -> newMap.put(k.toString(), v.toString()));
