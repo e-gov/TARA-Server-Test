@@ -35,6 +35,15 @@ TARA OpenID Connect spetsiifilised väärtused - vajalikud suhtlemiseks TARA-ga.
 | test.tara.domainNamelocalhost | localhost | TARA teenuse domeeni nimi, vajalik küpsise salvestamisel. |
 | test.tara.banklinkMockUrl | http://localhost:8990/ipizza | Pangalingi mock teenuse URL |
 
+TARA HTTPS sertifikaadid - vajalikud kui test.tara.backendUrl algab https-iga
+
+| Parameeter | Vaikeväärtus | Kirjeldus |
+|------------|--------------|-----------|
+| test.tara.frontEndKeystore | src/test/resources/tara-fe.p12 | TARA front-end serveri HTTPS kliendisertifikaadi ja võtme asukoht. |
+| test.tara.frontEndKeystorePassword | secret | Võtmehoidla parool. |
+| test.tara.backEndTruststore | src/test/resources/tara-be.p12 | TARA back-end serveri HTTPS sertifikaat. |
+| test.tara.backEndTruststorePassword | secret | Usalduslao parool. |
+
 eIDAS node spetsiifilised väärtused - vajalikud simuleerimaks eIDAS nodei.
 
 | Parameeter | Vaikeväärtus | Kirjeldus |

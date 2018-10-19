@@ -39,7 +39,7 @@ public class CasManagementTest extends TestsBase {
     private ResourceLoader resourceLoader;
     private static boolean setupComplete = false;
     private OpenIdConnectFlow flow;
-    private RestAssuredConfig config;
+    private static RestAssuredConfig config;
 
     @Before
     public void setUp() throws IOException, ParseException {
