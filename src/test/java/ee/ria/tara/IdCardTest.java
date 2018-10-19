@@ -13,6 +13,8 @@ import ee.ria.tara.utils.OpenIdConnectUtils;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
 import io.qameta.allure.Link;
+import io.restassured.config.RestAssuredConfig;
+import io.restassured.config.SSLConfig;
 import io.restassured.response.Response;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Before;
@@ -43,6 +45,7 @@ public class IdCardTest extends TestsBase {
     private ResourceLoader resourceLoader;
     private static boolean setupComplete = false;
     private OpenIdConnectFlow flow;
+    private RestAssuredConfig config;
 
 
     @Before
@@ -59,6 +62,7 @@ public class IdCardTest extends TestsBase {
         flow.getOpenIDProvider().setJwkSet(jwkSet);
         flow.getOpenIDProvider().setIssuer(tokenIssuer);
         flow.setResourceLoader(resourceLoader);
+        flow.getOpenIDProvider().setSslConfig(config);
         flow.setup(properties);
     }
 
@@ -66,6 +70,12 @@ public class IdCardTest extends TestsBase {
         jwkSet = JWKSet.load(new URL(testTaraProperties.getFullJwksUrl()));
         tokenIssuer = getIssuer(testTaraProperties.getTargetUrl() + testTaraProperties.getConfigurationUrl());
         Security.addProvider(new BouncyCastleProvider());
+        if (testTaraProperties.getBackendUrl().startsWith("https")) {
+            config = new RestAssuredConfig().sslConfig(new SSLConfig().
+                    keyStore(testTaraProperties.getFrontEndKeystore(), testTaraProperties.getFrontEndKeystorePassword()).
+                    trustStore(testTaraProperties.getBackEndTruststore(), testTaraProperties.getBackEndTruststorePassword()));
+        }
+
     }
 
     @Test

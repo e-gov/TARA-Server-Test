@@ -72,6 +72,7 @@ public class IdCard {
         return given().cookie("JSESSIONID", jSessionId).header("XCLIENTCERTIFICATE", certificate)
                 .filter(new AllureRestAssured())
                 .relaxedHTTPSValidation()
+                .config(flow.getOpenIDProvider().getSslConfig())
                 .when()
                 .redirects().follow(false)
                 .get(flow.getOpenIDProvider().getBackendUrl() + "/idcard")

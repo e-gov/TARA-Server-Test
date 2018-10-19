@@ -34,6 +34,10 @@ public class TestTaraProperties {
     private String ocspTargetUrl;
     private String ocspBackendUrl;
     private String ocspMockUrl;
+    private String frontEndKeystore;
+    private String frontEndKeystorePassword;
+    private String backEndTruststorePassword;
+    private String backEndTruststore;
 
     public String getEidasNodeResponseUrl() {
         return eidasNodeResponseUrl;
@@ -253,5 +257,38 @@ public class TestTaraProperties {
 
     public void setOcspMockUrl(String ocspMockUrl) {
         this.ocspMockUrl = ocspMockUrl;
+    }
+
+    public String getFrontEndKeystore() {
+        return frontEndKeystore;
+    }
+
+    public void setFrontEndKeystore(String frontEndKeystore) {
+        this.frontEndKeystore = frontEndKeystore;
+    }
+
+    public String getFrontEndKeystorePassword() {
+        return frontEndKeystorePassword;
+    }
+
+    public void setFrontEndKeystorePassword(String frontEndKeystorePassword) {
+        this.frontEndKeystorePassword = frontEndKeystorePassword;
+    }
+
+    public String getBackEndTruststorePassword() {
+        return backEndTruststorePassword;
+    }
+
+    public void setBackEndTruststorePassword(String backEndTruststorePassword) {
+        this.backEndTruststorePassword = backEndTruststorePassword;
+    }
+
+    public String getBackEndTruststore() {
+
+        return backEndTruststore;
+    }
+
+    public void setBackEndTruststore(String backEndTruststore) {
+        this.backEndTruststore = backEndTruststore;
     }
 }
