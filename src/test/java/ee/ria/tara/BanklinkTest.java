@@ -32,6 +32,7 @@ import java.util.HashSet;
 import java.util.Map;
 
 import static ee.ria.tara.config.TaraTestStrings.OIDC_DEF_SCOPE;
+import static io.restassured.RestAssured.form;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -259,6 +260,19 @@ public class BanklinkTest extends TestsBase {
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("TEST-SURNAME"));
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo(null));
         assertThat(claims.getStringArrayClaim("amr")[0], equalTo("banklink"));
+    }
+
+    @Test
+    @Feature("TPL-2.1")
+    public void bankUrlInCspHeader() throws Exception {
+        BanklinkMock.createBank(flow, "DANSKE", "danske_priv");
+        Response loginPage = Requests.getAuthenticationMethodsPageWithScope(flow, "openid");
+        String execution = loginPage.getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
+        Response redirectResponse = Banklink.submitBanklink(flow, execution, "danske");
+        String bankRedirectUrl = redirectResponse.htmlPath().getString("**.find { it.@id == 'authenticationRedirectForm' }.@action");
+        redirectResponse.then()
+                .header("Content-Security-Policy", containsString(
+                        "form-action " + bankRedirectUrl + " 'self' " + flow.getRelyingParty().getRedirectUri()));
     }
 
 

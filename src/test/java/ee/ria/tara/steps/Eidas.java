@@ -46,20 +46,7 @@ public class Eidas {
 
     @Step("Get eIDAS SAML Request")
     public static Response getEidasSamlRequest(OpenIdConnectFlow flow, String personCountry, String execution) {
-        Response response = given()
-                .filter(flow.getCookieFilter())
-                .filter(new AllureRestAssuredFormParam()).relaxedHTTPSValidation()
-                .formParam("execution", execution)
-                .formParam("_eventId", "eidassubmit")
-                .formParam("country", personCountry)
-                .formParam("eidaslang", "")
-                .formParam("geolocation", "") //TODO: What for is this?
-                .queryParam("client_id", flow.getRelyingParty().getClientId())
-                .queryParam("redirect_uri", flow.getRelyingParty().getRedirectUri())
-                .when()
-                .post(flow.getOpenIDProvider().getLoginUrl())
-                .then()
-                .extract().response();
+        Response response = submitEidasLogin(flow, personCountry, execution);
 
         String samlRequest = response.htmlPath().getString("**.findAll { it.@name == 'SAMLRequest' }[0].@value");
         String relayState = response.htmlPath().getString("**.findAll { it.@name == 'RelayState' }[0].@value");
@@ -74,6 +61,24 @@ public class Eidas {
                 .formParam("SAMLRequest", samlRequest)
                 .when()
                 .post(url)
+                .then()
+                .extract().response();
+    }
+
+    @Step("Submit eIDAS login")
+    public static Response submitEidasLogin(OpenIdConnectFlow flow, String personCountry, String execution) {
+        return given()
+                .filter(flow.getCookieFilter())
+                .filter(new AllureRestAssuredFormParam()).relaxedHTTPSValidation()
+                .formParam("execution", execution)
+                .formParam("_eventId", "eidassubmit")
+                .formParam("country", personCountry)
+                .formParam("eidaslang", "")
+                .formParam("geolocation", "") //TODO: What for is this?
+                .queryParam("client_id", flow.getRelyingParty().getClientId())
+                .queryParam("redirect_uri", flow.getRelyingParty().getRedirectUri())
+                .when()
+                .post(flow.getOpenIDProvider().getLoginUrl())
                 .then()
                 .extract().response();
     }
@@ -104,6 +109,7 @@ public class Eidas {
                 .then()
                 .extract().header("location");
     }
+
     @Step("Return eIDAS error response")
     public static Response returnEidasErrorResponse(OpenIdConnectFlow flow, String samlResponse, String relayState) {
         Response response = given()
@@ -130,6 +136,7 @@ public class Eidas {
                 .then()
                 .extract().response();
     }
+
     @Step("Return eIDAS failure response")
     public static Response returnEidasFailureResponse(OpenIdConnectFlow flow, String samlResponse, String relayState) {
         return given()

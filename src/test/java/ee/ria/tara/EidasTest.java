@@ -34,6 +34,7 @@ import java.text.ParseException;
 
 import static ee.ria.tara.config.TaraTestStrings.*;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.core.StringStartsWith.startsWith;
 
@@ -259,23 +260,16 @@ public class EidasTest extends TestsBase {
         assertThat(error, equalTo("An unexpected error has occurred"));
     }
 
-    @Ignore
-    @Test //TODO: eIDAS Node do not forward the relayState!
-    public void eidas4_eidasWrongRelayState() throws URISyntaxException, ParseException, JOSEException {
-        /*Response response = initiateEidasAuthentication(DEF_COUNTRY, OIDC_DEF_SCOPE, null);
-        String relayState = response.htmlPath().getString("**.findAll { it.@name == 'RelayState' }[0].@value");
+    @Test
+    public void eidas3_eidasUrlInCspHeader() throws URISyntaxException, ParseException, JOSEException, IOException, InterruptedException {
+        Response taraLoginPage = Requests.getAuthenticationMethodsPageWithScope(flow, OIDC_DEF_SCOPE);
 
-        String loa = getDecodedSamlRequestBodyXml(response.getBody().asString()).getString("AuthnRequest.RequestedAuthnContext.AuthnContextClassRef");
-        //Here we need to simulate a response from foreign country eIDAS Node
-        String samlResponse = getBase64SamlResponseMinimalAttributes(response.getBody().asString(), DEFATTR_FIRST, DEFATTR_FAMILY, DEFATTR_PNO, DEFATTR_DATE, loa);
+        String execution = taraLoginPage.getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
+        Response redirectResponse = Eidas.submitEidasLogin(flow, DEF_COUNTRY, execution);
+        String eidasRedirectUrl = redirectResponse.htmlPath().getString("**.find {it.@enctype =='application/x-www-form-urlencoded'}.@action");
+        redirectResponse.then()
+                .header("Content-Security-Policy", containsString(
+                        "form-action " + eidasRedirectUrl + " 'self' " + flow.getRelyingParty().getRedirectUri()));
 
-        String authorizationCode = getAuthorizationCode(returnEidasResponse(samlResponse, "a" + relayState));
-        SignedJWT signedJWT = verifyTokenAndReturnSignedJwtObject(getIdToken(authorizationCode));
-
-        assertEquals("EE30011092212", signedJWT.getJWTClaimsSet().getSubject());
-        assertEquals(DEFATTR_FIRST, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("given_name"));
-        assertEquals(DEFATTR_FAMILY, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("family_name"));
-        assertEquals(DEFATTR_DATE, signedJWT.getJWTClaimsSet().getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"));
-        assertEquals(OIDC_AMR_EIDAS, signedJWT.getJWTClaimsSet().getStringArrayClaim("amr")[0]);*/
     }
 }
