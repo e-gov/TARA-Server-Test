@@ -16,15 +16,14 @@ import io.restassured.specification.FilterableResponseSpecification;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import static io.qameta.allure.attachment.http.HttpRequestAttachment.Builder.create;
 import static io.qameta.allure.attachment.http.HttpResponseAttachment.Builder.create;
 
 /**
- * Allure logger filter for Rest-assured with request form parameters.
+ * Allure logger filter for Rest-assured with duplicate response header handling
  */
-public class AllureRestAssuredFormParam implements OrderedFilter {
+public class AllureRestAssuredCorrectHeaders implements OrderedFilter {
 
     @Override
     public Response filter(final FilterableRequestSpecification requestSpec,
@@ -38,12 +37,8 @@ public class AllureRestAssuredFormParam implements OrderedFilter {
                 .withHeaders(toMapConverter(requestSpec.getHeaders()))
                 .withCookies(toMapConverter(requestSpec.getCookies()));
 
-        if (Objects.nonNull(requestSpec.getFormParams())) {
-            String result = requestSpec.getFormParams().entrySet()
-                    .stream()
-                    .map(entry -> entry.getKey() + ": " + (entry.getValue() instanceof String ? entry.getValue() : "")) //value can be io.restassured.internal.NoParameterValue
-                    .collect(Collectors.joining("\n"));
-            requestAttachmentBuilder.withBody(result);
+        if (Objects.nonNull(requestSpec.getBody())) {
+            requestAttachmentBuilder.withBody(prettifier.getPrettifiedBodyIfPossible(requestSpec));
         }
 
         final HttpRequestAttachment requestAttachment = requestAttachmentBuilder.build();
@@ -56,7 +51,7 @@ public class AllureRestAssuredFormParam implements OrderedFilter {
         final Response response = filterContext.next(requestSpec, responseSpec);
         final HttpResponseAttachment responseAttachment = create(response.getStatusLine())
                 .withResponseCode(response.getStatusCode())
-                .withHeaders(toMapConverterHeaders(response.getHeaders()))
+                .withHeaders(toMapConverterHeaders(response.getHeaders())) //Response can have multiple Set-Cookie headers
                 .withBody(prettifier.getPrettifiedBodyIfPossible(response, response.getBody()))
                 .build();
 

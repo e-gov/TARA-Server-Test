@@ -3,7 +3,6 @@ package ee.ria.tara.steps;
 import ee.ria.tara.model.OpenIdConnectFlow;
 import ee.ria.tara.utils.AllureRestAssuredFormParam;
 import io.qameta.allure.Step;
-import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.response.Response;
 import org.joda.time.DateTime;
 
@@ -34,6 +33,7 @@ public class SmartId {
         Response pollResponse = pollForAuthentication(flow, execution2, pollMillis);
         return Requests.followLoginRedirects(flow, pollResponse.getHeader("location"));
     }
+
     @Step("{flow.endUser}Submit Smart-ID login")
     public static Response submitSmartIdLogin(OpenIdConnectFlow flow, String idCode, String execution, String location) {
         return given()
@@ -50,6 +50,7 @@ public class SmartId {
                 .then()
                 .extract().response();
     }
+
     @Step("Poll Smart-ID authentication")
     //TODO: same as Mobile-Id polling
     public static Response pollForAuthentication(OpenIdConnectFlow flow, String execution, Integer intervalMillis) throws InterruptedException {
@@ -75,6 +76,7 @@ public class SmartId {
         }
         throw new RuntimeException("No MID response in: " + (intervalMillis * 3 + 200) + " millis");
     }
+
     @Step("{flow.endUser}Authenticates with Smart-ID and poll for errors")
     public static Response authenticatePollError(OpenIdConnectFlow flow, String idCode, Integer pollMillis) throws InterruptedException {
         Map<String, String> formParams = new HashMap<String, String>();
@@ -118,6 +120,7 @@ public class SmartId {
         }
         throw new RuntimeException("No MID response in: " + (intervalMillis * 3 + 200) + " millis");
     }
+
     public static String extractError(Response response) {
         return response.then().extract().response()
                 .htmlPath().getString("**.findAll { it.@class=='error-box' }").substring(4);

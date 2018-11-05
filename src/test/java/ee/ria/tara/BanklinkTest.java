@@ -32,7 +32,6 @@ import java.util.HashSet;
 import java.util.Map;
 
 import static ee.ria.tara.config.TaraTestStrings.OIDC_DEF_SCOPE;
-import static io.restassured.RestAssured.form;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;

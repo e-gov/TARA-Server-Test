@@ -45,8 +45,8 @@ class OpenIdConnectFlow {
 
     }
 
-    public void updateSessionId(String sessionId) {
-        BasicClientCookie cookie = new BasicClientCookie("JSESSIONID", sessionId);
+    public void updateSessionCookie(String sessionId) {
+        BasicClientCookie cookie = new BasicClientCookie("SESSION", sessionId);
         cookie.setPath("/");
         cookie.setDomain(testProperties.getDomainName());
         cookieFilter.cookieStore.addCookie(cookie);

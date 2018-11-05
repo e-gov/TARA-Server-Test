@@ -1,9 +1,9 @@
 package ee.ria.tara.steps;
 
 import ee.ria.tara.model.OpenIdConnectFlow;
+import ee.ria.tara.utils.AllureRestAssuredCorrectHeaders;
 import ee.ria.tara.utils.AllureRestAssuredFormParam;
 import io.qameta.allure.Step;
-import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.response.Response;
 
 import java.net.URISyntaxException;
@@ -56,7 +56,7 @@ public class Banklink {
     @Step("Banklink callback POST")
     public static String banklinkCallbackPOST(OpenIdConnectFlow flow, Map bankResponseParams) {
         return given().filter(flow.getCookieFilter())
-                .filter(new AllureRestAssured()).relaxedHTTPSValidation().log().all().formParams(bankResponseParams)
+                .filter(new AllureRestAssuredCorrectHeaders()).relaxedHTTPSValidation().log().all().formParams(bankResponseParams)
                 .post(flow.getOpenIDProvider().getLoginUrl()).then().log().all().extract().response()
                 .getHeader("location");
     }
@@ -64,7 +64,7 @@ public class Banklink {
     @Step("Banklink callback GET")
     public static String banklinkCallbackGET(OpenIdConnectFlow flow, Map bankResponseParams) {
         return given().redirects().follow(false).filter(flow.getCookieFilter())
-                .filter(new AllureRestAssured()).relaxedHTTPSValidation().log().all().queryParams(bankResponseParams)
+                .filter(new AllureRestAssuredCorrectHeaders()).relaxedHTTPSValidation().log().all().queryParams(bankResponseParams)
                 .get(flow.getOpenIDProvider().getLoginUrl()).then().log().all().extract().response()
                 .getHeader("location");
     }

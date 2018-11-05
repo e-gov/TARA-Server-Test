@@ -7,9 +7,9 @@ import ee.ria.tara.config.TestTaraProperties;
 import ee.ria.tara.model.OpenIdConnectFlow;
 import ee.ria.tara.steps.IdCard;
 import ee.ria.tara.steps.Requests;
+import ee.ria.tara.utils.AllureRestAssuredCorrectHeaders;
 import ee.ria.tara.utils.OpenIdConnectUtils;
 import io.qameta.allure.Step;
-import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.config.RestAssuredConfig;
 import io.restassured.config.SSLConfig;
 import io.restassured.response.Response;
@@ -76,7 +76,7 @@ public class CasManagementTest extends TestsBase {
         Response taraLoginPage = Requests.followRedirect(flow, manageResponse.getHeader("location"));
         String execution = taraLoginPage.getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
         Response idcardResponse = IdCard.idcard(flow, OpenIdConnectUtils.getResourceFileAsString(flow.getResourceLoader(), "47101010033.pem"));
-        flow.updateSessionId(idcardResponse.cookie("JSESSIONID"));
+        flow.updateSessionCookie(idcardResponse.cookie("SESSION"));
         Response submitResponse = submitIdCardLogin(flow, execution, manageResponse.getHeader("location"));
         Response oauth2Response = managementTicketValidation(flow, submitResponse.getHeader("location"));
         String pac4jcookie = oauth2Response.getCookie("pac4jCsrfToken");
@@ -84,23 +84,24 @@ public class CasManagementTest extends TestsBase {
 
         managePage.then().statusCode(200);
         String logoutButton = managePage.htmlPath().getString("**.findAll { it.@id == 'logoutUrlLink' }.@href");
-        assertThat(logoutButton, startsWith("/cas-management/logout"));
+        assertThat(logoutButton, startsWith("/logout"));
     }
 
     @Step("Open CAS management page")
     public static Response openManagementPage(OpenIdConnectFlow flow) {
         return given()
                 .filter(flow.getCookieFilter())
-                .filter(new AllureRestAssured())
+                .filter(new AllureRestAssuredCorrectHeaders())
                 .relaxedHTTPSValidation()
                 .when()
                 .redirects().follow(false)
-                .get(flow.getTestProperties().getTargetUrl() + "/cas-management/manage.html")
+                .get(flow.getTestProperties().getManageUrl())
                 .then().extract().response();
     }
 
-    @Step("{flow.endUser}Follow redirect - /cas-management/manage.html?ticket=ST-*****")
+    @Step("{flow.endUser}Follow redirect - /manage.html?ticket=ST-*****")
     public static Response managementTicketValidation(OpenIdConnectFlow flow, String location) {
+        //TODO: this is no longer the case, uses SESSION cookie
         //CAS management login flow has 2 JSESSIONID cookies - / and /cas-management
         //Regular Rest-Assured cookie filter only sends a single cookie
         String cookieHeader = "";
@@ -108,7 +109,7 @@ public class CasManagementTest extends TestsBase {
             cookieHeader += cookie.getName() + "=" + cookie.getValue() + "; ";
         }
         return given()
-                .filter(new AllureRestAssured())
+                .filter(new AllureRestAssuredCorrectHeaders())
                 .header("Cookies", cookieHeader)
                 .relaxedHTTPSValidation()
                 .redirects().follow(false)
@@ -118,17 +119,15 @@ public class CasManagementTest extends TestsBase {
                 .extract().response();
     }
 
-    @Step("{flow.endUser}Follow redirect - /cas-management/manage.html")
+    @Step("{flow.endUser}Follow redirect - /manage.html")
     public static Response managementPageRedirect(OpenIdConnectFlow flow, String location, String pac4jCookie) {
         String cookieHeader = "";
         for (Cookie cookie : flow.getCookieFilter().cookieStore.getCookies()) {
             cookieHeader += cookie.getName() + "=" + cookie.getValue() + "; ";
         }
         cookieHeader += "pac4jCsrfToken=" + pac4jCookie;
-
-        System.out.println(cookieHeader);
         return given()
-                .filter(new AllureRestAssured())
+                .filter(new AllureRestAssuredCorrectHeaders())
                 .header("Cookies", cookieHeader)
                 .relaxedHTTPSValidation()
                 .redirects().follow(false)

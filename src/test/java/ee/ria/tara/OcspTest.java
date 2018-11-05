@@ -165,6 +165,7 @@ public class OcspTest extends TestsBase {
         JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
         assertThat(claims.getSubject(), equalTo("EE37101010021"));
     }
+
     @Test
     @Feature("OCSP-1")
     @Ignore

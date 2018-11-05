@@ -3,7 +3,6 @@ package ee.ria.tara.steps;
 import ee.ria.tara.model.OpenIdConnectFlow;
 import ee.ria.tara.utils.AllureRestAssuredFormParam;
 import io.qameta.allure.Step;
-import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.response.Response;
 import org.joda.time.DateTime;
 
@@ -78,6 +77,7 @@ public class MobileId {
         }
         throw new RuntimeException("No MID response in: " + (intervalMillis * 3 + 200) + " millis");
     }
+
     @Step("{flow.endUser}Authenticates with Mobile-ID and poll for errors")
     public static Response authenticateWithMobileIdPollError(OpenIdConnectFlow flow, String mobileNo, String idCode, Integer pollMillis) throws InterruptedException {
         Map<String, String> formParams = new HashMap<String, String>();

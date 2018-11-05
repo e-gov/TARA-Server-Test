@@ -38,6 +38,8 @@ public class TestTaraProperties {
     private String frontEndKeystorePassword;
     private String backEndTruststorePassword;
     private String backEndTruststore;
+    private String manageUrl;
+
 
     public String getEidasNodeResponseUrl() {
         return eidasNodeResponseUrl;
@@ -290,5 +292,13 @@ public class TestTaraProperties {
 
     public void setBackEndTruststore(String backEndTruststore) {
         this.backEndTruststore = backEndTruststore;
+    }
+
+    public String getManageUrl() {
+        return manageUrl;
+    }
+
+    public void setManageUrl(String manageUrl) {
+        this.manageUrl = manageUrl;
     }
 }

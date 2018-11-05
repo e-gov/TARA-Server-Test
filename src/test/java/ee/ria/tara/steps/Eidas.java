@@ -6,9 +6,7 @@ import ee.ria.tara.model.OpenIdConnectFlow;
 import ee.ria.tara.utils.AllureRestAssuredFormParam;
 import ee.ria.tara.utils.EidasResponseDataUtils;
 import ee.ria.tara.utils.OpenIdConnectUtils;
-import ee.ria.tara.utils.ResponseBuilderBase;
 import io.qameta.allure.Step;
-import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.response.Response;
 
 import java.io.IOException;

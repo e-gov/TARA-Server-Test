@@ -1,19 +1,14 @@
 package ee.ria.tara.steps;
 
 import ee.ria.tara.model.OpenIdConnectFlow;
+import ee.ria.tara.utils.AllureRestAssuredCorrectHeaders;
 import ee.ria.tara.utils.OpenIdConnectUtils;
 import io.qameta.allure.Step;
-import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.http.ContentType;
-import io.restassured.http.Header;
 import io.restassured.response.Response;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.http.cookie.Cookie;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Map;
 
 import static io.restassured.RestAssured.given;
@@ -23,7 +18,7 @@ public class Requests {
     //Relying Party retreives ID token
     public static Response postToTokenEndpoint(OpenIdConnectFlow flow, String authorizationCode) {
         return given()
-                .filter(new AllureRestAssured())
+                .filter(new AllureRestAssuredCorrectHeaders())
                 .relaxedHTTPSValidation()
                 .queryParam("grant_type", "authorization_code")
                 .queryParam("code", authorizationCode)
@@ -40,7 +35,7 @@ public class Requests {
     //Relying Party retreives ID token
     public static Response postToTokenEndpoint(OpenIdConnectFlow flow, Map<String, ?> parameters) {
         return given()
-                .filter(new AllureRestAssured())
+                .filter(new AllureRestAssuredCorrectHeaders())
                 .relaxedHTTPSValidation()
                 .queryParams(parameters)
                 .when()
@@ -55,7 +50,7 @@ public class Requests {
     public static Response openIdConnectAuthenticationRequest(OpenIdConnectFlow flow, Map<String, ?> values) {
         return given()
                 .filter(flow.getCookieFilter())
-                .filter(new AllureRestAssured())
+                .filter(new AllureRestAssuredCorrectHeaders())
                 .relaxedHTTPSValidation()
                 .queryParams(values)
                 .queryParam("state", flow.getState())
@@ -71,7 +66,7 @@ public class Requests {
     public static Response openIdConnectAuthenticationRequestWithoutStateAndNonce(OpenIdConnectFlow flow, Map<String, ?> values) {
         return given()
                 .filter(flow.getCookieFilter())
-                .filter(new AllureRestAssured())
+                .filter(new AllureRestAssuredCorrectHeaders())
                 .relaxedHTTPSValidation()
                 .queryParams(values)
                 .when()
@@ -84,7 +79,7 @@ public class Requests {
     public static Response followRedirect(OpenIdConnectFlow flow, String location) {
         return given()
                 .filter(flow.getCookieFilter())
-                .filter(new AllureRestAssured())
+                .filter(new AllureRestAssuredCorrectHeaders())
                 .relaxedHTTPSValidation()
                 .when()
                 .redirects().follow(false)
@@ -104,7 +99,7 @@ public class Requests {
     public static Response oauth2AuthorizeRedirect(OpenIdConnectFlow flow, String location) {
         return given()
                 .filter(flow.getCookieFilter())
-                .filter(new AllureRestAssured())
+                .filter(new AllureRestAssuredCorrectHeaders())
                 .relaxedHTTPSValidation()
                 .redirects().follow(false)
                 .when()
@@ -117,7 +112,7 @@ public class Requests {
     public static Response oidcAuthorizeRedirect(OpenIdConnectFlow flow, String location) {
         return given()
                 .filter(flow.getCookieFilter())
-                .filter(new AllureRestAssured())
+                .filter(new AllureRestAssuredCorrectHeaders())
                 .relaxedHTTPSValidation()
                 .redirects().follow(false)
                 .when()

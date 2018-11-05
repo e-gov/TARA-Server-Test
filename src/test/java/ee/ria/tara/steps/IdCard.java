@@ -1,11 +1,11 @@
 package ee.ria.tara.steps;
 
 import ee.ria.tara.model.OpenIdConnectFlow;
+import ee.ria.tara.utils.AllureRestAssuredCorrectHeaders;
 import ee.ria.tara.utils.AllureRestAssuredFormParam;
 import ee.ria.tara.utils.OpenIdConnectUtils;
 import io.qameta.allure.Allure;
 import io.qameta.allure.Step;
-import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.response.Response;
 import org.apache.http.cookie.Cookie;
 
@@ -32,7 +32,7 @@ public class IdCard {
         Response taraLoginPageResponse = Requests.followRedirect(flow, location);
         String execution = taraLoginPageResponse.getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
         Response idcardResponse = idcard(flow, OpenIdConnectUtils.getResourceFileAsString(flow.getResourceLoader(), certificateFile));
-        flow.updateSessionId(idcardResponse.cookie("JSESSIONID"));
+        flow.updateSessionCookie(idcardResponse.cookie("SESSION"));
         Response submitResponse = submitIdCardLogin(flow, execution, location);
         return Requests.followLoginRedirects(flow, submitResponse.getHeader("location"));
     }
@@ -63,14 +63,14 @@ public class IdCard {
             //NullPointerException when running test from IntelliJ
         }
 
-        String jSessionId = "";
+        String session = "";
         for (Cookie cookie : flow.getCookieFilter().cookieStore.getCookies()) {
-            if (cookie.getName().equalsIgnoreCase("JSESSIONID") && cookie.getPath().equalsIgnoreCase("/")) {
-                jSessionId = cookie.getValue();
+            if (cookie.getName().equalsIgnoreCase("SESSION") && cookie.getPath().equalsIgnoreCase("/")) {
+                session = cookie.getValue();
             }
         }
-        return given().cookie("JSESSIONID", jSessionId).header("XCLIENTCERTIFICATE", certificate)
-                .filter(new AllureRestAssured())
+        return given().cookie("SESSION", session).header("XCLIENTCERTIFICATE", certificate)
+                .filter(new AllureRestAssuredCorrectHeaders())
                 .relaxedHTTPSValidation()
                 .config(flow.getOpenIDProvider().getSslConfig())
                 .when()
@@ -93,9 +93,10 @@ public class IdCard {
         Response taraLoginPageResponse = Requests.followRedirect(flow, location);
         String execution = taraLoginPageResponse.getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
         Response idcardResponse = idcard(flow, OpenIdConnectUtils.getResourceFileAsString(flow.getResourceLoader(), certificateFile));
-        flow.updateSessionId(idcardResponse.cookie("JSESSIONID"));
+        flow.updateSessionCookie(idcardResponse.cookie("SESSION"));
         return submitIdCardLogin(flow, execution, location);
     }
+
     public static String extractError(Response response) {
         return response.then().extract().response()
                 .htmlPath().getString("**.findAll { it.@class=='error-box' }").substring(4);

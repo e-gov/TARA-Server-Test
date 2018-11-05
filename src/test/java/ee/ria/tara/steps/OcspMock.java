@@ -1,8 +1,8 @@
 package ee.ria.tara.steps;
 
 import ee.ria.tara.model.OpenIdConnectFlow;
+import ee.ria.tara.utils.AllureRestAssuredCorrectHeaders;
 import io.qameta.allure.Step;
-import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.http.ContentType;
 
 import java.util.Map;
@@ -14,7 +14,7 @@ public class OcspMock {
     public static void setStatus(OpenIdConnectFlow flow, String serialNumber, Map responseData) throws Exception {
         given()
                 .contentType(ContentType.JSON).
-                filter(new AllureRestAssured())
+                filter(new AllureRestAssuredCorrectHeaders())
                 .body(responseData)
                 .when()
                 .post(flow.getTestProperties().getOcspMockUrl() + "/set_status/" + serialNumber)

@@ -15,7 +15,6 @@ import ee.ria.tara.utils.OpenIdConnectUtils;
 import io.restassured.response.Response;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.opensaml.core.config.InitializationException;

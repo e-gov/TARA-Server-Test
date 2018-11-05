@@ -35,8 +35,7 @@ import java.util.Map;
 import static ee.ria.tara.config.TaraTestStrings.OIDC_DEF_SCOPE;
 import static ee.ria.tara.steps.IdCard.submitIdCardLogin;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.*;
 
 @SpringBootTest(classes = IdCardTest.class)
 @Category(IntegrationTest.class)
@@ -140,7 +139,8 @@ public class IdCardTest extends TestsBase {
         String execution = taraLoginPageResponse.getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
         Response idcardResponse = IdCard.idcard(flow, OpenIdConnectUtils.getResourceFileAsString(flow.getResourceLoader(), certificateFile));
 
-        flow.updateSessionId(idcardResponse.cookie("JSESSIONID"));
+        flow.updateSessionCookie(idcardResponse.cookie("SESSION"));
+
         Response submitResponse = submitIdCardLogin(flow, execution, authenticationResponse.getHeader("location"));
 
         Response oauth2Response = Requests.oauth2AuthorizeRedirect(flow, submitResponse.getHeader("location"));
@@ -151,12 +151,11 @@ public class IdCardTest extends TestsBase {
         System.out.println(token);
     }
 
-    //TODO: what happens when /idcard response returns false?
     @Test
     @Description("Attacker attempts a session fixation attack")
     @Feature("ID-Card")
     @Link("https://www.owasp.org/index.php/Session_fixation")
-    public void jsessionIdAttackerSetsCookie() throws Exception {
+    public void attackerSetsSessionCookie() throws Exception {
         String certificateFile = "38001085718.pem";
 
         Map<String, String> formParams = new HashMap<String, String>();
@@ -174,22 +173,24 @@ public class IdCardTest extends TestsBase {
         //Attacker obtains a session ID cookie
         Response attackerAuthenticationResponse = Requests.openIdConnectAuthenticationRequest(attackerFlow, formParams);
 
-        Steps.log("Attacker sets JSESSIONID cookie for End-User");
-        flow.updateSessionId(attackerAuthenticationResponse.cookie("JSESSIONID"));
+        Steps.log("Attacker sets SESSION cookie for End-User");
+        flow.updateSessionCookie(attackerAuthenticationResponse.cookie("SESSION"));
+
         //User authenticates with cookie set by attacker
         Response authenticationResponse = Requests.openIdConnectAuthenticationRequest(flow, formParams);
         Response taraLoginPageResponse = Requests.followRedirect(flow, authenticationResponse.getHeader("location"));
         String execution = taraLoginPageResponse.getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
         Response idcardResponse = IdCard.idcard(flow, OpenIdConnectUtils.getResourceFileAsString(flow.getResourceLoader(), certificateFile));
 
-        //Cookie should be changed when user is authenticated
-        assertThat(idcardResponse.cookie("JSESSIONID"), not(flow.getCookieFilter().cookieStore.getCookies().get(0).getValue()));
+        //Cookies should be changed when user is authenticated
+        assertThat(idcardResponse.cookie("SESSION"), not(flow.getCookieFilter().cookieStore.getCookies().get(0).getValue()));
 
-        //Attacker can not log in with fixed JSESSIONID
-        submitIdCardLogin(attackerFlow, execution, authenticationResponse.getHeader("location")).then().statusCode(401);
+        //Attacker can not log in with fixed SESSION cookie
+        submitIdCardLogin(attackerFlow, execution, authenticationResponse.getHeader("location")).then().statusCode(anyOf(is(401), is(500)));
 
         //End-User flow is successful
-        flow.updateSessionId(idcardResponse.cookie("JSESSIONID"));
+        flow.updateSessionCookie(idcardResponse.cookie("SESSION"));
+
         Response submitResponse = submitIdCardLogin(flow, execution, authenticationResponse.getHeader("location"));
         Response oauth2Response = Requests.oauth2AuthorizeRedirect(flow, submitResponse.getHeader("location"));
         Response oidcResponse = Requests.oidcAuthorizeRedirect(flow, oauth2Response.getHeader("location"));
