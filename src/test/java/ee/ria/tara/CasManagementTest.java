@@ -95,7 +95,7 @@ public class CasManagementTest extends TestsBase {
                 .relaxedHTTPSValidation()
                 .when()
                 .redirects().follow(false)
-                .get(flow.getTestProperties().getManageUrl())
+                .get(flow.getTestProperties().getManageUrl()+"/manage.html")
                 .then().extract().response();
     }
 

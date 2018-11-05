@@ -268,7 +268,7 @@ public class EidasTest extends TestsBase {
         String eidasRedirectUrl = redirectResponse.htmlPath().getString("**.find {it.@enctype =='application/x-www-form-urlencoded'}.@action");
         redirectResponse.then()
                 .header("Content-Security-Policy", containsString(
-                        "form-action " + eidasRedirectUrl + " 'self' " + flow.getRelyingParty().getRedirectUri()));
+                        "form-action " + eidasRedirectUrl + " 'self' " + flow.getTestProperties().getManageUrl() + " " + flow.getRelyingParty().getRedirectUri()));
 
     }
 }

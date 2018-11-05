@@ -34,7 +34,7 @@ TARA OpenID Connect spetsiifilised väärtused - vajalikud suhtlemiseks TARA-ga.
 | test.tara.backendUrl | http://localhost:8081 | TARA Tomcati-i URL, vajalik ID-Kaardi sertifikaadi saatmiseks. |
 | test.tara.domainNamelocalhost | localhost | TARA teenuse domeeni nimi, vajalik küpsise salvestamisel. |
 | test.tara.banklinkMockUrl | http://localhost:8990/ipizza | Pangalingi mock teenuse URL |
-| test.tara.manageUrl | https://localhost:8443/manage.html | TARA-Management teenuse URL |
+| test.tara.manageUrl | https://localhost:8443 | TARA-Management teenuse URL |
 
 TARA HTTPS sertifikaadid - vajalikud kui test.tara.backendUrl algab https-iga
 

@@ -271,7 +271,7 @@ public class BanklinkTest extends TestsBase {
         String bankRedirectUrl = redirectResponse.htmlPath().getString("**.find { it.@id == 'authenticationRedirectForm' }.@action");
         redirectResponse.then()
                 .header("Content-Security-Policy", containsString(
-                        "form-action " + bankRedirectUrl + " 'self' " + flow.getRelyingParty().getRedirectUri()));
+                        "form-action " + bankRedirectUrl + " 'self' " + flow.getTestProperties().getManageUrl() + " " + flow.getRelyingParty().getRedirectUri()));
     }
 
 
