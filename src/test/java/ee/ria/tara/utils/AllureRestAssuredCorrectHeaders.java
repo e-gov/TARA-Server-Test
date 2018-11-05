@@ -71,7 +71,6 @@ public class AllureRestAssuredCorrectHeaders implements OrderedFilter {
 
     private static Map<String, String> toMapConverterHeaders(Headers items) {
         final Map<String, String> result = new HashMap<>();
-        System.out.println(items);
         items.forEach(h -> result.put(h.getName(), String.join("; ", items.getValues(h.getName()))));
         return result;
     }

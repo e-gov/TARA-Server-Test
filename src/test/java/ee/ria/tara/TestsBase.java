@@ -93,11 +93,9 @@ public abstract class TestsBase {
 
     String getIssuer(String url) {
         return given()
-//                .log().all()
                 .when()
                 .get(url)
                 .then()
-//                .log().all()
                 .extract().response().getBody().jsonPath().getString("issuer");
     }
 

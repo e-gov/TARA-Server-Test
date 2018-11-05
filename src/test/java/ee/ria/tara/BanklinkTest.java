@@ -218,7 +218,7 @@ public class BanklinkTest extends TestsBase {
         String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
         SignedJWT signedJWT = Steps.verifyTokenAndReturnSignedJwtObject(flow, token);
 
-        String responseBody = given().filter(flow.getCookieFilter()).relaxedHTTPSValidation().log().all().formParams(bankResponseParams).post(flow.getOpenIDProvider().getLoginUrl()).then().statusCode(401).log().all().extract().response().body().asString();
+        String responseBody = given().filter(flow.getCookieFilter()).relaxedHTTPSValidation().formParams(bankResponseParams).post(flow.getOpenIDProvider().getLoginUrl()).then().statusCode(401).extract().response().body().asString();
         assertThat(responseBody, StringContains.containsString("Kasutaja tuvastamine ebaõnnestus"));
     }
 
@@ -235,7 +235,7 @@ public class BanklinkTest extends TestsBase {
         String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
         SignedJWT signedJWT = Steps.verifyTokenAndReturnSignedJwtObject(flow, token);
 
-        String responseBody = given().filter(flow.getCookieFilter()).relaxedHTTPSValidation().log().all().formParams(bankResponseParams).post(flow.getOpenIDProvider().getLoginUrl()).then().statusCode(401).log().all().extract().response().body().asString();
+        String responseBody = given().filter(flow.getCookieFilter()).relaxedHTTPSValidation().formParams(bankResponseParams).post(flow.getOpenIDProvider().getLoginUrl()).then().statusCode(401).extract().response().body().asString();
         assertThat(responseBody, StringContains.containsString("Kasutaja tuvastamine ebaõnnestus"));
     }
 
