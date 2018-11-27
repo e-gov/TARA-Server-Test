@@ -7,10 +7,12 @@ import ee.ria.tara.model.OpenIdConnectFlow;
 import ee.ria.tara.utils.OpenIdConnectUtils;
 import io.qameta.allure.Allure;
 import io.qameta.allure.Step;
+import io.restassured.response.Response;
 
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.Date;
+import java.util.List;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -54,5 +56,14 @@ public class Steps {
         Object jsonObject = mapper.readValue(json, Object.class);
         String prettyJson = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonObject);
         Allure.addAttachment(name, "application/json", prettyJson, "json");
+    }
+    public static List extractError(Response response) {
+        /*Sample list:
+        0 = "Kasutaja tuvastamine ebaõnnestus."
+        1 = "Isikukood on ebakorrektses formaadis."
+        2 = "\n                Intsidendi number: \n                AOO6OBRV9N0BYB6L"
+        */
+        return response.then().extract().response()
+                .htmlPath().getList("**.findAll { it.@class=='alert alert-error' }.p");
     }
 }

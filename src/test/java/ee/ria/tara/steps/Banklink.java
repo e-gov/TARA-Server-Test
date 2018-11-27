@@ -40,7 +40,7 @@ public class Banklink {
                 .filter(new AllureRestAssuredFormParam())
                 .formParam("execution", execution)
                 .formParam("_eventId", "banksubmit")
-                .formParam("geolocation", "")
+                //.formParam("geolocation", "")
                 .formParam("bank", bank)
                 //TODO: actually used? .queryParam("service",flow.getOpenIDProvider().getServiceUrl, testTaraProperties.getServiceUrl())
                 //TODO: testTaraProperties.getCasClientId()

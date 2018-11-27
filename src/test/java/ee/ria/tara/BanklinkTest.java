@@ -17,6 +17,7 @@ import io.restassured.response.Response;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.hamcrest.core.StringContains;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -159,18 +160,41 @@ public class BanklinkTest extends TestsBase {
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("2000-01-01"));
         assertThat(claims.getStringArrayClaim("amr")[0], equalTo("banklink"));
     }
+    @Test
+    @Feature("TPL-8")
+    public void bank_example_luminor() throws Exception {
+        BanklinkMock.createBank(flow, "NORDEA", "luminor_priv");
+
+        BanklinkMock.setBankDefault(flow, "NORDEA", "VK_OTHER", "");
+        BanklinkMock.setBankDefault(flow, "NORDEA", "VK_USER_NAME", "Test-Surname,Given-Name1 Givenname2");
+        BanklinkMock.setBankDefault(flow, "NORDEA", "VK_USER_ID", "60001019896");
+        BanklinkMock.setBankDefault(flow, "NORDEA", "VK_COUNTRY", "EE");
+
+        Map bankRequestParams = Banklink.startBankAuthentication(flow, "luminor", OIDC_DEF_SCOPE, "et");
+        Map bankResponseParams = BanklinkMock.getBankResponse(flow, bankRequestParams);
+        String location = Banklink.banklinkCallbackPOST(flow, bankResponseParams);
+        Response oidcResponse = Requests.followLoginRedirects(flow, location);
+        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
+
+        assertThat(claims.getSubject(), equalTo("EE60001019896"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo("GIVEN-NAME1"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("TEST-SURNAME"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("2000-01-01"));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo("banklink"));
+    }
 
     @Test
     @Feature("TPL-2")
     public void bank1_bankRequestParams() throws Exception {
-        BanklinkMock.createBank(flow, "DANSKE", "danske_priv");
+        BanklinkMock.createBank(flow, "HP", "swedbank_priv");
 
-        Map<String, String> bankRequestParams = Banklink.startBankAuthentication(flow, "danske", OIDC_DEF_SCOPE, "et");
+        Map<String, String> bankRequestParams = Banklink.startBankAuthentication(flow, "swedbank", OIDC_DEF_SCOPE, "et");
         Map<String, String> expectedBankRequestParams = new HashMap<>();
         expectedBankRequestParams.put("VK_SERVICE", "4012");
         expectedBankRequestParams.put("VK_VERSION", "008");
-        expectedBankRequestParams.put("VK_SND_ID", "TARA_DANSKE");
-        expectedBankRequestParams.put("VK_REC_ID", "DANSKE");
+        expectedBankRequestParams.put("VK_SND_ID", "TARA_SWED");
+        expectedBankRequestParams.put("VK_REC_ID", "HP");
         expectedBankRequestParams.put("VK_RETURN", flow.getOpenIDProvider().getLoginUrl());
         expectedBankRequestParams.put("VK_RID", "");
         expectedBankRequestParams.put("VK_ENCODING", "UTF-8");
@@ -185,9 +209,9 @@ public class BanklinkTest extends TestsBase {
     @Test
     @Feature("TPL-2")
     public void bank2_bankRequestParams_langEN() throws Exception {
-        BanklinkMock.createBank(flow, "DANSKE", "danske_priv");
+        BanklinkMock.createBank(flow, "HP", "swedbank_priv");
 
-        Map bankRequestParams = Banklink.startBankAuthentication(flow, "danske", OIDC_DEF_SCOPE, "en");
+        Map bankRequestParams = Banklink.startBankAuthentication(flow, "swedbank", OIDC_DEF_SCOPE, "en");
 
         Map<String, String> expectedBankRequestParams = new HashMap<String, String>();
         expectedBankRequestParams.put("VK_LANG", "ENG");
@@ -197,9 +221,9 @@ public class BanklinkTest extends TestsBase {
     @Test
     @Feature("TPL-2")
     public void bank2_bankRequestParams_langRU() throws Exception {
-        BanklinkMock.createBank(flow, "DANSKE", "danske_priv");
+        BanklinkMock.createBank(flow, "HP", "swedbank_priv");
 
-        Map bankRequestParams = Banklink.startBankAuthentication(flow, "danske", OIDC_DEF_SCOPE, "ru");
+        Map bankRequestParams = Banklink.startBankAuthentication(flow, "swedbank", OIDC_DEF_SCOPE, "ru");
 
         Map<String, String> expectedBankRequestParams = new HashMap<String, String>();
         expectedBankRequestParams.put("VK_LANG", "RUS");
@@ -209,9 +233,9 @@ public class BanklinkTest extends TestsBase {
     @Test
     @Feature("TPL-6")
     public void bank_VK_NONCE_reuseForbidden() throws Exception {
-        BanklinkMock.createBank(flow, "DANSKE", "danske_priv");
+        BanklinkMock.createBank(flow, "HP", "swedbank_priv");
 
-        Map bankRequestParams = Banklink.startBankAuthentication(flow, "danske", OIDC_DEF_SCOPE, "et");
+        Map bankRequestParams = Banklink.startBankAuthentication(flow, "swedbank", OIDC_DEF_SCOPE, "et");
         Map bankResponseParams = BanklinkMock.getBankResponse(flow, bankRequestParams);
         String location = Banklink.banklinkCallbackPOST(flow, bankResponseParams);
         Response oidcResponse = Requests.followLoginRedirects(flow, location);
@@ -225,10 +249,10 @@ public class BanklinkTest extends TestsBase {
     @Test
     @Feature("TPL-6")
     public void bank_single_VK_NONCE_in_session() throws Exception {
-        BanklinkMock.createBank(flow, "DANSKE", "danske_priv");
+        BanklinkMock.createBank(flow, "HP", "swedbank_priv");
 
-        Map bankRequestParams = Banklink.startBankAuthentication(flow, "danske", OIDC_DEF_SCOPE, "et");
-        Map bankRequestParams2 = Banklink.startBankAuthentication(flow, "danske", OIDC_DEF_SCOPE, "et");
+        Map bankRequestParams = Banklink.startBankAuthentication(flow, "swedbank", OIDC_DEF_SCOPE, "et");
+        Map bankRequestParams2 = Banklink.startBankAuthentication(flow, "swedbank", OIDC_DEF_SCOPE, "et");
         Map bankResponseParams = BanklinkMock.getBankResponse(flow, bankRequestParams);
         String location = Banklink.banklinkCallbackPOST(flow, bankResponseParams);
         Response oidcResponse = Requests.followLoginRedirects(flow, location);
@@ -242,12 +266,12 @@ public class BanklinkTest extends TestsBase {
     @Test
     @Feature("TPL-8")
     public void bank_latvian_example() throws Exception {
-        BanklinkMock.createBank(flow, "DANSKE", "danske_priv");
+        BanklinkMock.createBank(flow, "HP", "swedbank_priv");
 
-        BanklinkMock.setBankDefault(flow, "DANSKE", "VK_USER_NAME", "Test-Surname,Given-Name1 Givenname2");
-        BanklinkMock.setBankDefault(flow, "DANSKE", "VK_USER_ID", "320000-00000");
-        BanklinkMock.setBankDefault(flow, "DANSKE", "VK_COUNTRY", "LV");
-        Map bankRequestParams = Banklink.startBankAuthentication(flow, "danske", OIDC_DEF_SCOPE, "et");
+        BanklinkMock.setBankDefault(flow, "HP", "VK_USER_NAME", "Test-Surname,Given-Name1 Givenname2");
+        BanklinkMock.setBankDefault(flow, "HP", "VK_USER_ID", "320000-00000");
+        BanklinkMock.setBankDefault(flow, "HP", "VK_COUNTRY", "LV");
+        Map bankRequestParams = Banklink.startBankAuthentication(flow, "swedbank", OIDC_DEF_SCOPE, "et");
         Map bankResponseParams = BanklinkMock.getBankResponse(flow, bankRequestParams);
         String location = Banklink.banklinkCallbackPOST(flow, bankResponseParams);
         Response oidcResponse = Requests.followLoginRedirects(flow, location);
@@ -263,19 +287,15 @@ public class BanklinkTest extends TestsBase {
 
     @Test
     @Feature("TPL-2.1")
+    @Ignore("Requires CSP with form-action")
     public void bankUrlInCspHeader() throws Exception {
-        BanklinkMock.createBank(flow, "DANSKE", "danske_priv");
+        BanklinkMock.createBank(flow, "HP", "swedbank_priv");
         Response loginPage = Requests.getAuthenticationMethodsPageWithScope(flow, "openid");
         String execution = loginPage.getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
-        Response redirectResponse = Banklink.submitBanklink(flow, execution, "danske");
+        Response redirectResponse = Banklink.submitBanklink(flow, execution, "swedbank");
         String bankRedirectUrl = redirectResponse.htmlPath().getString("**.find { it.@id == 'authenticationRedirectForm' }.@action");
         redirectResponse.then()
                 .header("Content-Security-Policy", containsString(
                         "form-action " + bankRedirectUrl + " 'self' " + flow.getTestProperties().getManageUrl() + " " + flow.getRelyingParty().getRedirectUri()));
     }
-
-
-    //TODO: datetime tests
-    //setBankDefault("HP", "VK_DATETIME", "2018-09-07T12:50:45+0300");
-
 }

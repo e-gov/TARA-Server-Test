@@ -134,7 +134,7 @@ public class MobileIdTest extends TestsBase {
     @Test
     public void mob3_mobileIdAuthenticationInvalidPhoneNumber() {
         String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdError(flow, "123456789123", "60001019906"));
-        assertThat(errorMessage, startsWith("Kasutajal pole Mobiil-ID lepingut.Intsidendi number:"));
+        assertThat(errorMessage, startsWith("Kasutajal pole Mobiil-ID lepingut."));
     }
 
     /**
@@ -143,7 +143,7 @@ public class MobileIdTest extends TestsBase {
     @Test
     public void mob3_mobileIdAuthenticationNoMobileNo() {
         String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdError(flow, "", "60001019906"));
-        assertThat(errorMessage, startsWith("Telefoninumber ei ole korrektne.Intsidendi number:"));
+        assertThat(errorMessage, startsWith("Telefoninumber ei ole korrektne."));
     }
 
     /**
@@ -152,7 +152,7 @@ public class MobileIdTest extends TestsBase {
     @Test
     public void mob3_mobileIdAuthenticationNoIdCode() {
         String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdError(flow, "00000766", ""));
-        assertThat(errorMessage, startsWith("Isikukood ei ole korrektne.Intsidendi number:"));
+        assertThat(errorMessage, startsWith("Isikukood ei ole korrektne."));
     }
 
     /**
@@ -161,7 +161,7 @@ public class MobileIdTest extends TestsBase {
     @Test
     public void mob3_mobileIdAuthenticationNoParameters() {
         String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdError(flow, "", ""));
-        assertThat(errorMessage, startsWith("Isikukood ei ole korrektne.Intsidendi number:"));
+        assertThat(errorMessage, startsWith("Isikukood ei ole korrektne."));
     }
 }
 

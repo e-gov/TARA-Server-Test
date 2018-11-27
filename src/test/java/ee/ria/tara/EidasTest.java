@@ -145,7 +145,7 @@ public class EidasTest extends TestsBase {
         //Here we need to simulate a response from foreign country eIDAS Node
         String samlResponse = EidasResponseDataUtils.getBase64SamlResponseWithErrors(flow, response.getBody().asString(), "AuthFailed");
         Response errorResponse = Eidas.returnEidasErrorResponse(flow, samlResponse, relayState);
-        String error = errorResponse.htmlPath().getString("**.findAll { it.@class=='error-box' }").substring(4);
+        String error = (String) Steps.extractError(errorResponse).get(1);
 
         assertThat(error, startsWith("Autentimine ebaõnnestus"));
     }
@@ -159,7 +159,7 @@ public class EidasTest extends TestsBase {
         String samlResponse = EidasResponseDataUtils.getBase64SamlResponseWithErrors(flow, response.getBody().asString(), "ConsentNotGiven");
         Response errorResponse = Eidas.returnEidasErrorResponse(flow, samlResponse, relayState);
 
-        String error = errorResponse.htmlPath().getString("**.findAll { it.@class=='error-box' }").substring(4);
+        String error = (String) Steps.extractError(errorResponse).get(1);
 
         assertThat(error, startsWith("Autentimine ebaõnnestus"));
     }
@@ -172,7 +172,7 @@ public class EidasTest extends TestsBase {
         //Here we need to simulate a response from foreign country eIDAS Node
         String samlResponse = EidasResponseDataUtils.getBase64SamlResponseWithErrors(flow, response.getBody().asString(), "RandomFailure");
         Response errorResponse = Eidas.returnEidasErrorResponse(flow, samlResponse, relayState);
-        String error = errorResponse.htmlPath().getString("**.findAll { it.@class=='error-box' }").substring(4);
+        String error = (String) Steps.extractError(errorResponse).get(1);
 
         assertThat(error, startsWith("Üldine viga"));
     }

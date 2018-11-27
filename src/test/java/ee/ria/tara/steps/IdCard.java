@@ -98,7 +98,7 @@ public class IdCard {
     }
 
     public static String extractError(Response response) {
-        return response.then().extract().response()
-                .htmlPath().getString("**.findAll { it.@class=='error-box' }").substring(4);
+        return (String) Steps.extractError(response).get(1);
+
     }
 }

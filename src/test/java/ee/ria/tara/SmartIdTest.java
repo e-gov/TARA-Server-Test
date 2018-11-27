@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.security.Security;
 import java.text.ParseException;
+import java.util.List;
 import java.util.Map;
 
 import static ee.ria.tara.config.TaraTestStrings.OIDC_DEF_SCOPE;
@@ -81,8 +82,8 @@ public class SmartIdTest extends TestsBase {
     @Test
     @Feature("TSID-11")
     public void smartid_UserRefuses() throws Exception {
-        String errorMessage = SmartId.extractError(SmartId.authenticatePollError(flow, "10101010016", 2000));
-        assertThat(errorMessage, startsWith("Autentimine katkestati kasutaja poolt."));
+        List errorMessage = SmartId.extractError(SmartId.authenticatePollError(flow, "10101010016", 2000));
+        assertThat(errorMessage.get(1), equalTo("Autentimine katkestati kasutaja poolt."));
     }
 
     /**
@@ -99,8 +100,10 @@ public class SmartIdTest extends TestsBase {
         Response taraLoginPageResponse = Requests.followRedirect(flow, location);
         String execution = taraLoginPageResponse.getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
         Response submitResponse = SmartId.submitSmartIdLogin(flow, "12akl2", execution, location);
-        String errorMessage = SmartId.extractError(submitResponse);
-        assertThat(errorMessage, startsWith("Isikukood on ebakorrektses formaadis.Intsidendi number:"));
+
+
+        List errorMessage = SmartId.extractError(submitResponse);
+        assertThat(errorMessage.get(1), equalTo("Isikukood on ebakorrektses formaadis."));
     }
 
     /**
@@ -117,7 +120,7 @@ public class SmartIdTest extends TestsBase {
         Response taraLoginPageResponse = Requests.followRedirect(flow, location);
         String execution = taraLoginPageResponse.getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
         Response submitResponse = SmartId.submitSmartIdLogin(flow, "", execution, location);
-        String errorMessage = SmartId.extractError(submitResponse);
-        assertThat(errorMessage, startsWith("Isikukood puuduIntsidendi number:"));
+        List errorMessage = SmartId.extractError(submitResponse);
+        assertThat(errorMessage.get(1), equalTo("Isikukood puudu"));
     }
 }

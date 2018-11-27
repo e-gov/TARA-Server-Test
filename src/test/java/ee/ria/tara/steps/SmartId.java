@@ -9,6 +9,7 @@ import org.joda.time.DateTime;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static ee.ria.tara.config.TaraTestStrings.OIDC_DEF_SCOPE;
@@ -121,8 +122,13 @@ public class SmartId {
         throw new RuntimeException("No MID response in: " + (intervalMillis * 3 + 200) + " millis");
     }
 
-    public static String extractError(Response response) {
+    public static List extractError(Response response) {
+        /*Sample list:
+        0 = "Kasutaja tuvastamine ebaõnnestus."
+        1 = "Isikukood on ebakorrektses formaadis."
+        2 = "\n                Intsidendi number: \n                AOO6OBRV9N0BYB6L"
+        */
         return response.then().extract().response()
-                .htmlPath().getString("**.findAll { it.@class=='error-box' }").substring(4);
+                .htmlPath().getList("**.findAll { it.@class=='alert alert-error' }.p");
     }
 }
