@@ -407,7 +407,7 @@ public class OpenIdConnectTest extends TestsBase {
         queryParams.remove("lang");
         queryParams.put("locale", "ru");
         Response response = Requests.getAuthenticationMethodsPageWithParameters(flow, queryParams);
-        response.then().body("html.head.title", equalTo("Департамент государственной инфосистемы"));
+        response.then().body("html.head.title", equalTo("Национальный сервис аутентификации"));
     }
 
     @Test
@@ -417,7 +417,7 @@ public class OpenIdConnectTest extends TestsBase {
         queryParams.remove("lang");
         queryParams.put("locale", "fi");
         Response response = Requests.getAuthenticationMethodsPageWithParameters(flow, queryParams);
-        response.then().body("html.head.title", equalTo("Information System Authority"));
+        response.then().body("html.head.title", equalTo("National authentication service"));
     }
 
     private Map<String, String> getQueryParams(String url) throws URISyntaxException {

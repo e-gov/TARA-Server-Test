@@ -189,48 +189,23 @@ public abstract class TestsBase {
     }
 
     protected Boolean isEidasPresent(Response response) {
-        String thisValue = response.htmlPath().getString("**.findAll { it.@id == 'collapseEidas' }.@aria-labelledby");
-        if (thisValue.equals("methodEidas")) {
-            return true;
-        } else {
-            return false;
-        }
+        return response.htmlPath().getInt("**.findAll { it.'@data-tab' == 'eu-citizen' }.size()") > 0;
     }
 
     protected Boolean isMidPresent(Response response) {
-        String thisValue = response.htmlPath().getString("**.findAll { it.@id == 'collapseMob' }.@aria-labelledby");
-        if (thisValue.equals("methodMobID")) {
-            return true;
-        } else {
-            return false;
-        }
+        return response.htmlPath().getInt("**.findAll { it.'@data-tab' == 'mobile-id' }.size()") > 0;
     }
 
     protected Boolean isIdCardPresent(Response response) {
-        String thisValue = response.htmlPath().getString("**.findAll { it.@id == 'collapseOne' }.@aria-labelledby");
-        if (thisValue.equals("methodIDCard")) {
-            return true;
-        } else {
-            return false;
-        }
+        return response.htmlPath().getInt("**.findAll { it.'@data-tab' == 'id-card' }.size()") > 0;
     }
 
     protected Boolean isBankPresent(Response response) {
-        String thisValue = response.htmlPath().getString("**.findAll { it.@id == 'collapseBank' }.@aria-labelledby");
-        if (thisValue.equals("methodBank")) {
-            return true;
-        } else {
-            return false;
-        }
+        return response.htmlPath().getInt("**.findAll { it.'@data-tab' == 'bank-link' }.size()") > 0;
     }
 
     protected Boolean isSmartIdPresent(Response response) {
-        String thisValue = response.htmlPath().getString("**.findAll { it.@id == 'collapseSmartIdForm' }.@aria-labelledby");
-        if (thisValue.equals("methodSmartID")) {
-            return true;
-        } else {
-            return false;
-        }
+        return response.htmlPath().getInt("**.findAll { it.'@data-tab' == 'smart-id' }.size()") > 0;
     }
 
 }

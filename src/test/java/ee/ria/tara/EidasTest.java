@@ -15,6 +15,7 @@ import ee.ria.tara.utils.OpenIdConnectUtils;
 import io.restassured.response.Response;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.opensaml.core.config.InitializationException;
@@ -260,6 +261,7 @@ public class EidasTest extends TestsBase {
     }
 
     @Test
+    @Ignore("Requires CSP with form-action")
     public void eidas3_eidasUrlInCspHeader() throws URISyntaxException, ParseException, JOSEException, IOException, InterruptedException {
         Response taraLoginPage = Requests.getAuthenticationMethodsPageWithScope(flow, OIDC_DEF_SCOPE);
 
