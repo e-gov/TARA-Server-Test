@@ -131,7 +131,7 @@ public class IdCardTest extends TestsBase {
         formParams.put("response_type", "code");
         formParams.put("client_id", flow.getRelyingParty().getClientId());
         formParams.put("redirect_uri", flow.getRelyingParty().getRedirectUri());
-        formParams.put("lang", language);
+        formParams.put("ui_locales", language);
         Response authenticationResponse = Requests.openIdConnectAuthenticationRequest(flow, formParams);
 
         Response taraLoginPageResponse = Requests.followRedirect(flow, authenticationResponse.getHeader("location"));
@@ -163,7 +163,7 @@ public class IdCardTest extends TestsBase {
         formParams.put("response_type", "code");
         formParams.put("client_id", flow.getRelyingParty().getClientId());
         formParams.put("redirect_uri", flow.getRelyingParty().getRedirectUri());
-        formParams.put("lang", "et");
+        formParams.put("ui_locales", "et");
 
         flow.setEndUser("End-User: ");
         OpenIdConnectFlow attackerFlow = new OpenIdConnectFlow();

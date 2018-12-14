@@ -22,7 +22,7 @@ public class MobileId {
         formParams.put("response_type", "code");
         formParams.put("client_id", flow.getRelyingParty().getClientId());
         formParams.put("redirect_uri", flow.getRelyingParty().getRedirectUri());
-        formParams.put("lang", "et");
+        formParams.put("ui_locales", "et");
         Response authenticationResponse = Requests.openIdConnectAuthenticationRequest(flow, formParams); //getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value")
         String location = authenticationResponse.then().extract().response()
                 .getHeader("location");
@@ -85,7 +85,7 @@ public class MobileId {
         formParams.put("response_type", "code");
         formParams.put("client_id", flow.getRelyingParty().getClientId());
         formParams.put("redirect_uri", flow.getRelyingParty().getRedirectUri());
-        formParams.put("lang", "et");
+        formParams.put("ui_locales", "et");
         Response authenticationResponse = Requests.openIdConnectAuthenticationRequest(flow, formParams); //getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value")
         String location = authenticationResponse.then().extract().response()
                 .getHeader("location");
@@ -129,7 +129,7 @@ public class MobileId {
         formParams.put("response_type", "code");
         formParams.put("client_id", flow.getRelyingParty().getClientId());
         formParams.put("redirect_uri", flow.getRelyingParty().getRedirectUri());
-        formParams.put("lang", "et");
+        formParams.put("ui_locales", "et");
         Response authenticationResponse = Requests.openIdConnectAuthenticationRequest(flow, formParams);
         String location = authenticationResponse.then().extract().response()
                 .getHeader("location");

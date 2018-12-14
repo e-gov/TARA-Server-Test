@@ -404,7 +404,7 @@ public class OpenIdConnectTest extends TestsBase {
     public void oidc3_supportedLocaleShouldSucceed() throws Exception {
         Map queryParams = OpenIdConnectUtils.getAuthorizationRequestData(flow);
         //TODO: which is it?
-        queryParams.remove("lang");
+        queryParams.remove("ui_locales");
         queryParams.put("locale", "ru");
         Response response = Requests.getAuthenticationMethodsPageWithParameters(flow, queryParams);
         response.then().body("html.head.title", equalTo("Национальный сервис аутентификации"));
@@ -414,7 +414,7 @@ public class OpenIdConnectTest extends TestsBase {
     public void oidc3_unsupportedLocaleShouldSwitchToEnglish() throws Exception {
         Map queryParams = OpenIdConnectUtils.getAuthorizationRequestData(flow);
         //TODO: which is it?
-        queryParams.remove("lang");
+        queryParams.remove("ui_locales");
         queryParams.put("locale", "fi");
         Response response = Requests.getAuthenticationMethodsPageWithParameters(flow, queryParams);
         response.then().body("html.head.title", equalTo("National authentication service"));

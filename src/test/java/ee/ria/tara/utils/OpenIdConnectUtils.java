@@ -71,7 +71,7 @@ public class OpenIdConnectUtils {
         queryParams.put("response_type", "code");
         queryParams.put("client_id", flow.getRelyingParty().getClientId());
         queryParams.put("redirect_uri", flow.getRelyingParty().getRedirectUri());
-        queryParams.put("lang", "et");
+        queryParams.put("ui_locales", "et");
         return queryParams;
     }
 }
