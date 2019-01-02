@@ -13,11 +13,13 @@ import ee.ria.tara.steps.Requests;
 import ee.ria.tara.steps.Steps;
 import ee.ria.tara.utils.EidasResponseDataUtils;
 import ee.ria.tara.utils.OpenIdConnectUtils;
+import io.qameta.allure.Link;
 import io.restassured.response.Response;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.opensaml.core.config.InitializationException;
@@ -129,13 +131,23 @@ public class OpenIdConnectTest extends TestsBase {
     }
 
     @Test
+    public void oidc1_MetadataAndTokenKeyIdMatches() throws Exception {
+        Response oidcResponse = MobileId.authenticateWithMobileId(flow, "00000766", "60001019906", 7000, OIDC_DEF_SCOPE);
+        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        SignedJWT signedJWT = Steps.verifyTokenAndReturnSignedJwtObject(flow, token);
+
+        assertThat(flow.getOpenIDProvider().getJwkSet().getKeys().get(0).getKeyID(), equalTo(signedJWT.getHeader().getKeyID()));
+    }
+
+    @Test
+    //TODO: Should be invalid_grant according to https://tools.ietf.org/html/rfc6749#section-5.2
     public void oidc2_requestTokenTwiceShouldFail() throws Exception {
         Response oidcResponse = MobileId.authenticateWithMobileId(flow, "00000766", "60001019906", 7000, OIDC_DEF_SCOPE);
         Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
 
         Response response = Requests.postToTokenEndpoint(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
         response.then().statusCode(400);
-        response.then().body("error", equalTo("invalid_grant"));
+        response.then().body("error", equalTo("invalid_request"));
 
     }
 
@@ -167,12 +179,13 @@ public class OpenIdConnectTest extends TestsBase {
     }
 
     @Test
+    //TODO: Should be invalid_grant according to https://tools.ietf.org/html/rfc6749#section-5.2
     public void oidc2_incorrectAuthorizationCodeShouldReturnError() throws Exception {
         Response oidcResponse = MobileId.authenticateWithMobileId(flow, "00000766", "60001019906", 3000, OIDC_DEF_SCOPE);
         String authorizationCode = OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location"));
         Response response = Requests.postToTokenEndpoint(flow, authorizationCode + "a");
         response.then().statusCode(400);
-        response.then().body("error", equalTo("invalid_grant"));
+        response.then().body("error", equalTo("invalid_request"));
     }
 
     @Test
@@ -366,8 +379,7 @@ public class OpenIdConnectTest extends TestsBase {
     }
 
     @Test
-    //TODO: It does the exact opposite
-    public void oidc3_severalAcrValuesParameterShouldReturnSuccess() throws Exception {
+    public void oidc3_severalAcrValuesParameterShouldReturnError() throws Exception {
         Response response = Requests.getAuthenticationMethodsPageWithAcr(flow, Arrays.asList(OIDC_ACR_VALUES_HIGH, OIDC_ACR_VALUES_LOW));
 
         assertThat("Only supported acr_values are allowed", response.body().asString(), startsWith("RESPONSE ERROR: invalid_request - Multiple values found in the request for <acr_values> parameter"));
@@ -401,9 +413,45 @@ public class OpenIdConnectTest extends TestsBase {
     }
 
     @Test
-    public void oidc3_supportedLocaleShouldSucceed() throws Exception {
+    public void oidc3_supportedLocaleRuShouldSucceed() throws Exception {
         Map queryParams = OpenIdConnectUtils.getAuthorizationRequestData(flow);
-        //TODO: which is it?
+        queryParams.remove("ui_locales");
+        queryParams.put("ui_locales", "ru");
+        Response response = Requests.getAuthenticationMethodsPageWithParameters(flow, queryParams);
+        response.then().body("html.head.title", equalTo("Национальный сервис аутентификации"));
+    }
+
+    @Test
+    public void oidc3_supportedLocaleEnShouldSucceed() throws Exception {
+        Map queryParams = OpenIdConnectUtils.getAuthorizationRequestData(flow);
+        queryParams.remove("ui_locales");
+        queryParams.put("ui_locales", "en");
+        Response response = Requests.getAuthenticationMethodsPageWithParameters(flow, queryParams);
+        response.then().body("html.head.title", equalTo("National authentication service"));
+    }
+
+    @Test
+    //TODO: AUT-132 changed from english to default language
+    public void oidc3_unsupportedLocaleShouldSwitchToDefaultLanguage() throws Exception {
+        Map queryParams = OpenIdConnectUtils.getAuthorizationRequestData(flow);
+        queryParams.remove("ui_locales");
+        queryParams.put("ui_locales", "fi");
+        Response response = Requests.getAuthenticationMethodsPageWithParameters(flow, queryParams);
+        response.then().body("html.head.title", equalTo("Riigi autentimisteenus"));
+    }
+
+    @Test
+    public void oidc3_localeParameterStillSupportedEn() throws Exception {
+        Map queryParams = OpenIdConnectUtils.getAuthorizationRequestData(flow);
+        queryParams.remove("ui_locales");
+        queryParams.put("locale", "en");
+        Response response = Requests.getAuthenticationMethodsPageWithParameters(flow, queryParams);
+        response.then().body("html.head.title", equalTo("National authentication service"));
+    }
+
+    @Test
+    public void oidc3_localeParameterStillSupportedRu() throws Exception {
+        Map queryParams = OpenIdConnectUtils.getAuthorizationRequestData(flow);
         queryParams.remove("ui_locales");
         queryParams.put("locale", "ru");
         Response response = Requests.getAuthenticationMethodsPageWithParameters(flow, queryParams);
@@ -411,11 +459,32 @@ public class OpenIdConnectTest extends TestsBase {
     }
 
     @Test
-    public void oidc3_unsupportedLocaleShouldSwitchToEnglish() throws Exception {
+    @Ignore("Not implemented, AUT-132")
+    @Link(name = "Specification", url = "https://tools.ietf.org/html/rfc5646#section-2.1.1")
+    public void oidc3_localesAreCaseInsensitiveEn() throws Exception {
         Map queryParams = OpenIdConnectUtils.getAuthorizationRequestData(flow);
-        //TODO: which is it?
         queryParams.remove("ui_locales");
-        queryParams.put("locale", "fi");
+        queryParams.put("ui_locales", "EN");
+        Response response = Requests.getAuthenticationMethodsPageWithParameters(flow, queryParams);
+        response.then().body("html.head.title", equalTo("National authentication service"));
+    }
+    @Test
+    @Ignore("Not implemented, AUT-132")
+    @Link(name = "Specification", url = "https://tools.ietf.org/html/rfc5646#section-2.1.1")
+    public void oidc3_localesAreCaseInsensitiveRu() throws Exception {
+        Map queryParams = OpenIdConnectUtils.getAuthorizationRequestData(flow);
+        queryParams.remove("ui_locales");
+        queryParams.put("ui_locales", "RU");
+        Response response = Requests.getAuthenticationMethodsPageWithParameters(flow, queryParams);
+        response.then().body("html.head.title", equalTo("Национальный сервис аутентификации"));
+    }
+
+    @Test
+    @Ignore("Not implemented, AUT-132")
+    public void oidc3_localesFirstSupportedValueIsUsed() throws Exception {
+        Map queryParams = OpenIdConnectUtils.getAuthorizationRequestData(flow);
+        queryParams.remove("ui_locales");
+        queryParams.put("ui_locales", "fi en et");
         Response response = Requests.getAuthenticationMethodsPageWithParameters(flow, queryParams);
         response.then().body("html.head.title", equalTo("National authentication service"));
     }

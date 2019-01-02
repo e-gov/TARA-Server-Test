@@ -19,13 +19,13 @@ import static io.restassured.RestAssured.given;
 public class IdCard {
 
     @Step("{flow.endUser}Authenticates with ID-card")
-    public static Response authenticateWithIdCard(OpenIdConnectFlow flow, String certificateFile, String scope, String language) throws InterruptedException, URISyntaxException, IOException {
+    public static Response authenticateWithIdCard(OpenIdConnectFlow flow, String certificateFile, String scope, String locales) throws InterruptedException, URISyntaxException, IOException {
         Map<String, String> formParams = new HashMap<String, String>();
         formParams.put("scope", scope);
         formParams.put("response_type", "code");
         formParams.put("client_id", flow.getRelyingParty().getClientId());
         formParams.put("redirect_uri", flow.getRelyingParty().getRedirectUri());
-        formParams.put("ui_locales", language);
+        formParams.put("ui_locales", locales);
         Response authenticationResponse = Requests.openIdConnectAuthenticationRequest(flow, formParams); //getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value")
         String location = authenticationResponse.then().extract().response()
                 .getHeader("location");
@@ -80,13 +80,13 @@ public class IdCard {
     }
 
     @Step("{flow.endUser}Authenticates with ID-card")
-    public static Response authenticateWithIdAndReceiveError(OpenIdConnectFlow flow, String certificateFile, String scope, String language) throws InterruptedException, URISyntaxException, IOException {
+    public static Response authenticateWithIdAndReceiveError(OpenIdConnectFlow flow, String certificateFile, String scope, String locales) throws InterruptedException, URISyntaxException, IOException {
         Map<String, String> formParams = new HashMap<String, String>();
         formParams.put("scope", scope);
         formParams.put("response_type", "code");
         formParams.put("client_id", flow.getRelyingParty().getClientId());
         formParams.put("redirect_uri", flow.getRelyingParty().getRedirectUri());
-        formParams.put("ui_locales", language);
+        formParams.put("ui_locales", locales);
         Response authenticationResponse = Requests.openIdConnectAuthenticationRequest(flow, formParams); //getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value")
         String location = authenticationResponse.then().extract().response()
                 .getHeader("location");

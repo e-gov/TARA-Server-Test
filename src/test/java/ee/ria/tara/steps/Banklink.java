@@ -14,13 +14,13 @@ import static io.restassured.RestAssured.given;
 
 public class Banklink {
     @Step("Start Banklink authenticcation")
-    public static Map<String, String> startBankAuthentication(OpenIdConnectFlow flow, String bank, String scope, String language) throws InterruptedException, URISyntaxException {
+    public static Map<String, String> startBankAuthentication(OpenIdConnectFlow flow, String bank, String scope, String locales) throws InterruptedException, URISyntaxException {
         Map<String, String> formParams = new HashMap<String, String>();
         formParams.put("scope", scope);
         formParams.put("response_type", "code");
         formParams.put("client_id", flow.getRelyingParty().getClientId());
         formParams.put("redirect_uri", flow.getRelyingParty().getRedirectUri());
-        formParams.put("ui_locales", language);
+        formParams.put("ui_locales", locales);
         Response authenticationResponse = Requests.openIdConnectAuthenticationRequest(flow, formParams);
 
         Response taraLoginPageResponse = Requests.followRedirect(flow, authenticationResponse.getHeader("location"));

@@ -124,14 +124,14 @@ public class IdCardTest extends TestsBase {
     public void exampleFlow() throws Exception {
         String certificateFile = "38001085718.pem";
         String scope = OIDC_DEF_SCOPE;
-        String language = "et";
+        String locales = "et";
 
         Map<String, String> formParams = new HashMap<String, String>();
         formParams.put("scope", scope);
         formParams.put("response_type", "code");
         formParams.put("client_id", flow.getRelyingParty().getClientId());
         formParams.put("redirect_uri", flow.getRelyingParty().getRedirectUri());
-        formParams.put("ui_locales", language);
+        formParams.put("ui_locales", locales);
         Response authenticationResponse = Requests.openIdConnectAuthenticationRequest(flow, formParams);
 
         Response taraLoginPageResponse = Requests.followRedirect(flow, authenticationResponse.getHeader("location"));

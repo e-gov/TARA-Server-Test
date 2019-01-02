@@ -30,6 +30,7 @@ import java.text.ParseException;
 import static ee.ria.tara.steps.IdCard.submitIdCardLogin;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.startsWith;
 
 @SpringBootTest(classes = CasManagementTest.class)
@@ -83,8 +84,7 @@ public class CasManagementTest extends TestsBase {
         Response managePage = managementPageRedirect(flow, oauth2Response.getHeader("Location"), pac4jcookie);
 
         managePage.then().statusCode(200);
-        String logoutButton = managePage.htmlPath().getString("**.findAll { it.@id == 'logoutUrlLink' }.@href");
-        assertThat(logoutButton, startsWith("/logout"));
+        assertThat(managePage.htmlPath().getString("html.head.title"), equalTo("Services Management"));
     }
 
     @Step("Open CAS management page")
@@ -95,7 +95,7 @@ public class CasManagementTest extends TestsBase {
                 .relaxedHTTPSValidation()
                 .when()
                 .redirects().follow(false)
-                .get(flow.getTestProperties().getManageUrl()+"/manage.html")
+                .get(flow.getTestProperties().getManageUrl()+"/cas-management/manage.html")
                 .then().extract().response();
     }
 
