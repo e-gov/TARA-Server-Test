@@ -13,6 +13,7 @@ import ee.ria.tara.steps.Requests;
 import ee.ria.tara.steps.Steps;
 import ee.ria.tara.utils.EidasResponseDataUtils;
 import ee.ria.tara.utils.OpenIdConnectUtils;
+import io.qameta.allure.Issue;
 import io.qameta.allure.Link;
 import io.restassured.response.Response;
 import org.apache.http.NameValuePair;
@@ -140,6 +141,7 @@ public class OpenIdConnectTest extends TestsBase {
     }
 
     @Test
+    @Issue("AUT-223")
     //TODO: Should be invalid_grant according to https://tools.ietf.org/html/rfc6749#section-5.2
     public void oidc2_requestTokenTwiceShouldFail() throws Exception {
         Response oidcResponse = MobileId.authenticateWithMobileId(flow, "00000766", "60001019906", 7000, OIDC_DEF_SCOPE);
@@ -179,6 +181,7 @@ public class OpenIdConnectTest extends TestsBase {
     }
 
     @Test
+    @Issue("AUT-223")
     //TODO: Should be invalid_grant according to https://tools.ietf.org/html/rfc6749#section-5.2
     public void oidc2_incorrectAuthorizationCodeShouldReturnError() throws Exception {
         Response oidcResponse = MobileId.authenticateWithMobileId(flow, "00000766", "60001019906", 3000, OIDC_DEF_SCOPE);

@@ -2,6 +2,7 @@ package ee.ria.tara.steps;
 
 import ee.ria.tara.model.OpenIdConnectFlow;
 import ee.ria.tara.utils.AllureRestAssuredCorrectHeaders;
+import ee.ria.tara.utils.AllureRestAssuredFormParam;
 import ee.ria.tara.utils.OpenIdConnectUtils;
 import io.qameta.allure.Step;
 import io.restassured.http.ContentType;
@@ -16,7 +17,7 @@ import static io.restassured.RestAssured.given;
 public class Requests {
     @Step("Get token")
     //Relying Party retreives ID token
-    public static Response postToTokenEndpoint(OpenIdConnectFlow flow, String authorizationCode) {
+    public static Response postToTokenEndpointUsingQueryParameters(OpenIdConnectFlow flow, String authorizationCode) {
         return given()
                 .filter(new AllureRestAssuredCorrectHeaders())
                 .relaxedHTTPSValidation()
@@ -33,11 +34,30 @@ public class Requests {
 
     @Step("Get token")
     //Relying Party retreives ID token
-    public static Response postToTokenEndpoint(OpenIdConnectFlow flow, Map<String, ?> parameters) {
+    public static Response postToTokenEndpoint(OpenIdConnectFlow flow, String authorizationCode) {
+        //TODO: fix generated curl command
         return given()
-                .filter(new AllureRestAssuredCorrectHeaders())
+                .filter(new AllureRestAssuredFormParam())
                 .relaxedHTTPSValidation()
-                .queryParams(parameters)
+                .formParam("grant_type", "authorization_code")
+                .formParam("code", authorizationCode)
+                .formParam("redirect_uri", flow.getRelyingParty().getRedirectUri())
+                .when()
+                .header("Authorization", OpenIdConnectUtils.getAuthorization(flow.getRelyingParty().getClientId(), flow.getRelyingParty().getSecret()))
+                .urlEncodingEnabled(true)
+                .post(flow.getOpenIDProvider().getTokenUrl())
+                .then()
+                .extract().response();
+    }
+
+    @Step("Get token")
+    //Relying Party retreives ID token
+    public static Response postToTokenEndpoint(OpenIdConnectFlow flow, Map<String, ?> parameters) {
+        //TODO: fix generated curl command
+        return given()
+                .filter(new AllureRestAssuredFormParam())
+                .relaxedHTTPSValidation()
+                .formParams(parameters)
                 .when()
                 .header("Authorization", OpenIdConnectUtils.getAuthorization(flow.getRelyingParty().getClientId(), flow.getRelyingParty().getSecret()))
                 .urlEncodingEnabled(true)

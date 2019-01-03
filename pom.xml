@@ -126,6 +126,10 @@
                             <name>allure.results.directory</name>
                             <value>${project.build.directory}/allure-results</value>
                         </property>
+                        <property>
+                            <name>allure.link.issue.pattern</name>
+                            <value>https://jira.ria.ee/browse/{}</value>
+                        </property>
                     </systemProperties>
                 </configuration>
                 <dependencies>
