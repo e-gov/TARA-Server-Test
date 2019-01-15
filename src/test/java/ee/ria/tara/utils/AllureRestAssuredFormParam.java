@@ -16,9 +16,7 @@ import io.restassured.specification.FilterableResponseSpecification;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
-import static io.qameta.allure.attachment.http.HttpRequestAttachment.Builder.create;
 import static io.qameta.allure.attachment.http.HttpResponseAttachment.Builder.create;
 
 /**
@@ -33,20 +31,16 @@ public class AllureRestAssuredFormParam implements OrderedFilter {
         final Prettifier prettifier = new Prettifier();
 
 
-        final HttpRequestAttachment.Builder requestAttachmentBuilder = create("Request", requestSpec.getURI())
-                .withMethod(requestSpec.getMethod())
-                .withHeaders(toMapConverter(requestSpec.getHeaders()))
-                .withCookies(toMapConverter(requestSpec.getCookies()));
+        final HttpFormRequestAttachment.Builder requestAttachmentBuilder = HttpFormRequestAttachment.Builder.create("Request", requestSpec.getURI())
+                .setMethod(requestSpec.getMethod())
+                .setHeaders(toMapConverter(requestSpec.getHeaders()))
+                .setCookies(toMapConverter(requestSpec.getCookies()));
 
         if (Objects.nonNull(requestSpec.getFormParams())) {
-            String result = requestSpec.getFormParams().entrySet()
-                    .stream()
-                    .map(entry -> entry.getKey() + ": " + (entry.getValue() instanceof String ? entry.getValue() : "")) //value can be io.restassured.internal.NoParameterValue
-                    .collect(Collectors.joining("\n"));
-            requestAttachmentBuilder.withBody(result);
+            requestAttachmentBuilder.setFormParameters(requestSpec.getFormParams());
         }
 
-        final HttpRequestAttachment requestAttachment = requestAttachmentBuilder.build();
+        final HttpFormRequestAttachment requestAttachment = requestAttachmentBuilder.build();
 
         new DefaultAttachmentProcessor().addAttachment(
                 requestAttachment,
@@ -84,4 +78,5 @@ public class AllureRestAssuredFormParam implements OrderedFilter {
     public int getOrder() {
         return Integer.MAX_VALUE;
     }
+
 }

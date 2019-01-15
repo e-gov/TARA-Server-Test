@@ -462,7 +462,6 @@ public class OpenIdConnectTest extends TestsBase {
     }
 
     @Test
-    @Ignore("Not implemented, AUT-132")
     @Link(name = "Specification", url = "https://tools.ietf.org/html/rfc5646#section-2.1.1")
     public void oidc3_localesAreCaseInsensitiveEn() throws Exception {
         Map queryParams = OpenIdConnectUtils.getAuthorizationRequestData(flow);
@@ -472,7 +471,6 @@ public class OpenIdConnectTest extends TestsBase {
         response.then().body("html.head.title", equalTo("National authentication service"));
     }
     @Test
-    @Ignore("Not implemented, AUT-132")
     @Link(name = "Specification", url = "https://tools.ietf.org/html/rfc5646#section-2.1.1")
     public void oidc3_localesAreCaseInsensitiveRu() throws Exception {
         Map queryParams = OpenIdConnectUtils.getAuthorizationRequestData(flow);
@@ -483,7 +481,6 @@ public class OpenIdConnectTest extends TestsBase {
     }
 
     @Test
-    @Ignore("Not implemented, AUT-132")
     public void oidc3_localesFirstSupportedValueIsUsed() throws Exception {
         Map queryParams = OpenIdConnectUtils.getAuthorizationRequestData(flow);
         queryParams.remove("ui_locales");
