@@ -13,6 +13,7 @@ import ee.ria.tara.steps.Requests;
 import ee.ria.tara.steps.Steps;
 import ee.ria.tara.utils.EidasResponseDataUtils;
 import ee.ria.tara.utils.OpenIdConnectUtils;
+import io.qameta.allure.Feature;
 import io.qameta.allure.Issue;
 import io.qameta.allure.Link;
 import io.restassured.response.Response;
@@ -156,19 +157,13 @@ public class OpenIdConnectTest extends TestsBase {
     @Test //TODO: Error handling is changed with AUT-57
     public void oidc2_mandatoryScopeMissingErrorMustBeReturned() throws Exception {
         Response response = Requests.getAuthenticationMethodsPageWithScope(flow, "eidasonly");
-        assertThat("openid scope must be present error", response.body().asString(), startsWith("RESPONSE ERROR: invalid_scope - Required scope <openid> not provided."));
+        assertThat("openid scope must be present error", response.body().asString(), startsWith("RESPONSE ERROR: invalid_scope - Required scope <openid> not provided"));
     }
 
     @Test //TODO: Error handling is changed with AUT-57
     public void oidc2_emptyScopeErrorMustBeReturned() throws Exception {
         Response response = Requests.getAuthenticationMethodsPageWithScope(flow, null);
         assertThat("scope missing error", response.body().asString(), startsWith("RESPONSE ERROR: invalid_scope - No value found in the request for <scope> parameter"));
-    }
-
-    @Test //TODO: Error handling is changed with AUT-57
-    public void oidc2_notKnownScopeErrorMustBeReturned() throws Exception {
-        Response response = Requests.getAuthenticationMethodsPageWithScope(flow, "openid newscope");
-        assertThat("scope missing error", response.body().asString(), startsWith("RESPONSE ERROR: invalid_scope - One or some of the provided scopes are not allowed by TARA, only <openid, eidasonly> are permitted."));
     }
 
     @Test
@@ -339,28 +334,6 @@ public class OpenIdConnectTest extends TestsBase {
     }
 
     @Test
-    public void oidc3_eidasOnlyScopeShouldShowOnlyEidas() throws Exception {
-        Response response = Requests.getAuthenticationMethodsPageWithScope(flow, OIDC_EIDAS_ONLY_SCOPE);
-
-        assertThat("Only eIDAS must be present", isEidasPresent(response));
-        assertThat("Only eIDAS must be present", isMidPresent(response), is(false));
-        assertThat("Only eIDAS must be present", isIdCardPresent(response), is(false));
-        assertThat("Only eIDAS must be present", isBankPresent(response), is(false));
-        assertThat("Only eIDAS must be present", isSmartIdPresent(response), is(false));
-    }
-
-    @Test
-    public void oidc3_allAuthenticationMethodsShouldBePresent() throws Exception {
-        Response response = Requests.getAuthenticationMethodsPageWithScope(flow, OIDC_DEF_SCOPE);
-
-        assertThat("eIDAS must be present", isEidasPresent(response));
-        assertThat("MID must be present", isMidPresent(response));
-        assertThat("ID-Card must be present", isIdCardPresent(response));
-        assertThat("Bank must be present", isBankPresent(response));
-        assertThat("Smart-ID must be present", isSmartIdPresent(response));
-    }
-
-    @Test
     public void oidc3_illegalAcrValuesShouldReturnError() throws Exception {
         Response response = Requests.getAuthenticationMethodsPageWithAcr(flow, "High");
 
@@ -487,6 +460,138 @@ public class OpenIdConnectTest extends TestsBase {
         queryParams.put("ui_locales", "fi en et");
         Response response = Requests.getAuthenticationMethodsPageWithParameters(flow, queryParams);
         response.then().body("html.head.title", equalTo("National authentication service"));
+    }
+
+    @Test
+    @Feature("OIDC_SCOPES_SUPPORTED")
+    public void allAuthenticationMethodsShouldBePresentWithDefaultScope() throws Exception {
+        Response response = Requests.getAuthenticationMethodsPageWithScope(flow, OIDC_OPENID_SCOPE);
+
+        assertThat("eIDAS must be present", isEidasPresent(response));
+        assertThat("MID must be present", isMidPresent(response));
+        assertThat("ID-Card must be present", isIdCardPresent(response));
+        assertThat("Bank must be present", isBankPresent(response));
+        assertThat("Smart-ID must be present", isSmartIdPresent(response));
+    }
+
+    @Test
+    @Feature("OIDC_SCOPES_SUPPORTED")
+    public void allAuthenticationMethodsPresentWhenAskedWithScopesIndividually() throws Exception {
+        Response response = Requests.getAuthenticationMethodsPageWithScope(flow, OIDC_OPENID_SCOPE + OIDC_IDCARD_SCOPE + OIDC_MID_SCOPE + OIDC_EIDAS_SCOPE + OIDC_BANKLINK_SCOPE + OIDC_SMARTID_SCOPE);
+
+        assertThat("eIDAS must be present", isEidasPresent(response));
+        assertThat("MID must be present", isMidPresent(response));
+        assertThat("ID-Card must be present", isIdCardPresent(response));
+        assertThat("Bank must be present", isBankPresent(response));
+        assertThat("Smart-ID must be present", isSmartIdPresent(response));
+    }
+
+    @Test
+    @Feature("OIDC_SCOPES_SUPPORTED")
+    public void unknownScopeIsIgnored() throws Exception {
+        Response response = Requests.getAuthenticationMethodsPageWithScope(flow, OIDC_OPENID_SCOPE + "unknown");
+
+        assertThat("eIDAS must be present", isEidasPresent(response));
+        assertThat("MID must be present", isMidPresent(response));
+        assertThat("ID-Card must be present", isIdCardPresent(response));
+        assertThat("Bank must be present", isBankPresent(response));
+        assertThat("Smart-ID must be present", isSmartIdPresent(response));
+    }
+
+    @Test
+    @Feature("OIDC_SCOPES_SUPPORTED")
+    public void unknownScopeTogetherWIthValidIsIgnored() throws Exception {
+        Response response = Requests.getAuthenticationMethodsPageWithScope(flow, OIDC_OPENID_SCOPE + OIDC_IDCARD_SCOPE + "unknown");
+
+        assertThat("eIDAS must not be present", isEidasPresent(response), is(false));
+        assertThat("MID must not be present", isMidPresent(response), is(false));
+        assertThat("ID-Card must be present", isIdCardPresent(response));
+        assertThat("Bank must not be present", isBankPresent(response), is(false));
+        assertThat("Smart-ID must not be present", isSmartIdPresent(response), is(false));
+    }
+
+    @Test
+    @Feature("OIDC_SCOPES_SUPPORTED")
+    public void unknownScopeIsIgnoredIfMixedWithValidScopes() throws Exception {
+        Response response = Requests.getAuthenticationMethodsPageWithScope(flow, OIDC_OPENID_SCOPE + OIDC_IDCARD_SCOPE + "unknown " + OIDC_MID_SCOPE);
+
+        assertThat("eIDAS must not be present", isEidasPresent(response), is(false));
+        assertThat("MID must be present", isMidPresent(response));
+        assertThat("ID-Card must be present", isIdCardPresent(response));
+        assertThat("Bank must not be present", isBankPresent(response), is(false));
+        assertThat("Smart-ID must not be present", isSmartIdPresent(response), is(false));
+    }
+
+    @Test
+    @Feature("OIDC_SCOPES_SUPPORTED")
+    public void emailScopeIsIgnoredIfMixedWithValidScopes() throws Exception {
+        Response response = Requests.getAuthenticationMethodsPageWithScope(flow, OIDC_OPENID_SCOPE + OIDC_IDCARD_SCOPE + OIDC_EMAIL_SCOPE + OIDC_MID_SCOPE);
+
+        assertThat("eIDAS must not be present", isEidasPresent(response), is(false));
+        assertThat("MID must be present", isMidPresent(response));
+        assertThat("ID-Card must be present", isIdCardPresent(response));
+        assertThat("Bank must not be present", isBankPresent(response), is(false));
+        assertThat("Smart-ID must not be present", isSmartIdPresent(response), is(false));
+    }
+
+    @Test
+    @Feature("OIDC_SCOPES_SUPPORTED")
+    public void scopeIsCaseSensitiveShouldBeHandledAsUnknown() throws Exception {
+        Response response = Requests.getAuthenticationMethodsPageWithScope(flow, OIDC_OPENID_SCOPE + "IDCARD");
+
+        assertThat("eIDAS must be present", isEidasPresent(response));
+        assertThat("MID must be present", isMidPresent(response));
+        assertThat("ID-Card must be present", isIdCardPresent(response));
+        assertThat("Bank must be present", isBankPresent(response));
+        assertThat("Smart-ID must be present", isSmartIdPresent(response));
+    }
+
+    @Test
+    @Feature("OIDC_SCOPES_SUPPORTED")
+    public void doubleScopeValuesAreIgnored() throws Exception {
+        Response response = Requests.getAuthenticationMethodsPageWithScope(flow, OIDC_OPENID_SCOPE + OIDC_IDCARD_SCOPE + OIDC_IDCARD_SCOPE + OIDC_OPENID_SCOPE);
+
+        assertThat("eIDAS must not be present", isEidasPresent(response), is(false));
+        assertThat("MID must not be present", isMidPresent(response), is(false));
+        assertThat("ID-Card must be present", isIdCardPresent(response));
+        assertThat("Bank must not be present", isBankPresent(response), is(false));
+        assertThat("Smart-ID not must be present", isSmartIdPresent(response), is(false));
+    }
+
+    @Test
+    @Feature("OIDC_SCOPES_EIDASONLY")
+    public void eidasOnlyScopeShouldShowOnlyEidas() throws Exception {
+        Response response = Requests.getAuthenticationMethodsPageWithScope(flow, OIDC_OPENID_SCOPE + OIDC_EIDAS_ONLY_SCOPE);
+
+        assertThat("Only eIDAS must be present", isEidasPresent(response));
+        assertThat("Only eIDAS must be present", isMidPresent(response), is(false));
+        assertThat("Only eIDAS must be present", isIdCardPresent(response), is(false));
+        assertThat("Only eIDAS must be present", isBankPresent(response), is(false));
+        assertThat("Only eIDAS must be present", isSmartIdPresent(response), is(false));
+    }
+
+    @Test
+    @Feature("OIDC_SCOPES_EIDASONLY")
+    public void eidasonlyOverridesOtherScopes() throws Exception {
+        Response response = Requests.getAuthenticationMethodsPageWithScope(flow, OIDC_OPENID_SCOPE + OIDC_IDCARD_SCOPE + OIDC_MID_SCOPE + OIDC_BANKLINK_SCOPE + OIDC_SMARTID_SCOPE + OIDC_EIDAS_ONLY_SCOPE);
+
+        assertThat("Only eIDAS must be present", isEidasPresent(response));
+        assertThat("MID must not be present", isMidPresent(response), is(false));
+        assertThat("ID-Card must not be present", isIdCardPresent(response), is(false));
+        assertThat("Bank must not be present", isBankPresent(response), is(false));
+        assertThat("Smart-ID not must be present", isSmartIdPresent(response), is(false));
+    }
+
+    @Test
+    @Feature("OIDC_SCOPES_EIDASONLY")
+    public void eidasonlyShouldNotConflictWithEidas() throws Exception {
+        Response response = Requests.getAuthenticationMethodsPageWithScope(flow, OIDC_OPENID_SCOPE + OIDC_EIDAS_SCOPE + OIDC_EIDAS_ONLY_SCOPE);
+
+        assertThat("Only eIDAS must be present", isEidasPresent(response));
+        assertThat("MID must not be present", isMidPresent(response), is(false));
+        assertThat("ID-Card must not be present", isIdCardPresent(response), is(false));
+        assertThat("Bank must not be present", isBankPresent(response), is(false));
+        assertThat("Smart-ID not must be present", isSmartIdPresent(response), is(false));
     }
 
     private Map<String, String> getQueryParams(String url) throws URISyntaxException {

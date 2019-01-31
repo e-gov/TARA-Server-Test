@@ -42,7 +42,14 @@ public class TaraTestStrings {
     public static final String OIDC_AMR_IDC = "idcard";
     public static final String OIDC_AMR_EIDAS = "eIDAS";
     public static final String OIDC_DEF_SCOPE = "openid";
-    public static final String OIDC_EIDAS_ONLY_SCOPE = "openid eidasonly";
+    public static final String OIDC_OPENID_SCOPE = "openid ";
+    public static final String OIDC_EIDAS_ONLY_SCOPE = "eidasonly ";
+    public static final String OIDC_IDCARD_SCOPE = "idcard ";
+    public static final String OIDC_MID_SCOPE = "mid ";
+    public static final String OIDC_EIDAS_SCOPE = "eidas ";
+    public static final String OIDC_BANKLINK_SCOPE = "banklink ";
+    public static final String OIDC_SMARTID_SCOPE = "smartid ";
+    public static final String OIDC_EMAIL_SCOPE = "email ";
     public static final String OIDC_ACR_VALUES_LOW = "low";
     public static final String OIDC_ACR_VALUES_SUBSTANTIAL = "substantial";
     public static final String OIDC_ACR_VALUES_HIGH = "high";
