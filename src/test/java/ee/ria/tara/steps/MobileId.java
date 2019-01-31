@@ -55,7 +55,7 @@ public class MobileId {
 
     @Step("Poll Mobile-ID authentication")
     public static Response pollForAuthentication(OpenIdConnectFlow flow, String execution, Integer intervalMillis) throws InterruptedException {
-        DateTime endTime = new DateTime().plusMillis(intervalMillis * 3 + 200);
+        DateTime endTime = new DateTime().plusMillis(intervalMillis * 4 + 200);
         while (new DateTime().isBefore(endTime)) {
             Thread.sleep(intervalMillis);
             Response response = given()
@@ -75,7 +75,7 @@ public class MobileId {
                 return response;
             }
         }
-        throw new RuntimeException("No MID response in: " + (intervalMillis * 3 + 200) + " millis");
+        throw new RuntimeException("No MID response in: " + (intervalMillis * 4 + 200) + " millis");
     }
 
     @Step("{flow.endUser}Authenticates with Mobile-ID and poll for errors")
@@ -99,7 +99,7 @@ public class MobileId {
 
     @Step("Poll Mobile-ID authentication error")
     public static Response pollForAuthenticationError(OpenIdConnectFlow flow, String execution, Integer intervalMillis) throws InterruptedException {
-        DateTime endTime = new DateTime().plusMillis(intervalMillis * 3 + 200);
+        DateTime endTime = new DateTime().plusMillis(intervalMillis * 4 + 200);
         while (new DateTime().isBefore(endTime)) {
             Thread.sleep(intervalMillis);
             Response response = given()
@@ -119,7 +119,7 @@ public class MobileId {
                 return response;
             }
         }
-        throw new RuntimeException("No MID response in: " + (intervalMillis * 3 + 200) + " millis");
+        throw new RuntimeException("No MID response in: " + (intervalMillis * 4 + 200) + " millis");
     }
 
     @Step("Authenticates with Mobile-ID and receives error instantly")
