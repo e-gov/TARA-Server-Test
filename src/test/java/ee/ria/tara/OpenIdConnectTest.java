@@ -13,6 +13,8 @@ import ee.ria.tara.utils.OpenIdConnectUtils;
 import io.qameta.allure.Feature;
 import io.qameta.allure.Issue;
 import io.qameta.allure.Link;
+import io.restassured.config.RestAssuredConfig;
+import io.restassured.config.SSLConfig;
 import io.restassured.response.Response;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -55,6 +57,7 @@ public class OpenIdConnectTest extends TestsBase {
     private ResourceLoader resourceLoader;
     private static boolean setupComplete = false;
     private OpenIdConnectFlow flow;
+    private static RestAssuredConfig config;
 
     @Before
     public void setUp() throws IOException, ParseException, InitializationException {
@@ -72,6 +75,7 @@ public class OpenIdConnectTest extends TestsBase {
         flow.setResourceLoader(resourceLoader);
         flow.setEncryptionCredential(encryptionCredential);
         flow.setSignatureCredential(signatureCredential);
+        flow.getOpenIDProvider().setSslConfig(config);
         flow.setup(properties);
     }
 
@@ -83,6 +87,11 @@ public class OpenIdConnectTest extends TestsBase {
         //For eIDAS
         InitializationService.initialize();
         Security.addProvider(new BouncyCastleProvider());
+        if (testTaraProperties.getBackendUrl().startsWith("https")) {
+            config = new RestAssuredConfig().sslConfig(new SSLConfig().
+                    keyStore(testTaraProperties.getFrontEndKeystore(), testTaraProperties.getFrontEndKeystorePassword()).
+                    trustStore(testTaraProperties.getBackEndTruststore(), testTaraProperties.getBackEndTruststorePassword()));
+        }
         try {
             KeyStore keystore = KeyStore.getInstance(KeyStore.getDefaultType());
             Resource resource = resourceLoader.getResource(testTaraProperties.getKeystore());
