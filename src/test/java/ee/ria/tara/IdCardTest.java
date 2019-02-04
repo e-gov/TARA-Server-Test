@@ -32,7 +32,7 @@ import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static ee.ria.tara.config.TaraTestStrings.OIDC_DEF_SCOPE;
+import static ee.ria.tara.config.TaraTestStrings.*;
 import static ee.ria.tara.steps.IdCard.submitIdCardLogin;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -80,6 +80,20 @@ public class IdCardTest extends TestsBase {
     @Feature("ID-1")
     public void validLoginWithEsteid2018Certificate() throws Exception {
         Response oidcResponse = IdCard.authenticateWithIdCard(flow, "38001085718.pem", OIDC_DEF_SCOPE, "et");
+        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
+
+        assertThat(claims.getSubject(), equalTo("EE38001085718"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo("JAAK-KRISTJAN"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("JÕEORG"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("1980-01-08"));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo("idcard"));
+    }
+
+    @Test
+    @Feature("ID-1")
+    public void validLoginWithScope() throws Exception {
+        Response oidcResponse = IdCard.authenticateWithIdCard(flow, "38001085718.pem", OIDC_OPENID_SCOPE + OIDC_IDCARD_SCOPE, "et");
         String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
         JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
 

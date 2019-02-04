@@ -118,6 +118,25 @@ public class EidasTest extends TestsBase {
     }
 
     @Test
+    public void eidas1_eidasAuthenticationWithScope() throws Exception {
+        Response response = Eidas.initiateEidasAuthentication(flow, DEF_COUNTRY, OIDC_OPENID_SCOPE + OIDC_EIDAS_SCOPE, null);
+        String relayState = response.htmlPath().getString("**.findAll { it.@name == 'RelayState' }[0].@value");
+
+        //Here we need to simulate a response from foreign country eIDAS Node
+        String samlResponse = EidasResponseDataUtils.getBase64SamlResponseDefaultMaximalAttributes(flow, response.getBody().asString());
+        String location = Eidas.returnEidasResponse(flow, samlResponse, relayState);
+        Response oidcResponse = Requests.followLoginRedirects(flow, location);
+        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
+
+        assertThat(claims.getSubject(), equalTo("EE30011092212"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo(DEFATTR_FIRST));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo(DEFATTR_FAMILY));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo(DEFATTR_DATE));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo(OIDC_AMR_EIDAS));
+    }
+
+    @Test
     //TODO: should use getBase64SamlResponseLegalMaximalAttributes?
     public void eidas1_eidasAuthenticationMaxLegalAttrSuccess() throws Exception {
         Response response = Eidas.initiateEidasAuthentication(flow, DEF_COUNTRY, OIDC_DEF_SCOPE, null);

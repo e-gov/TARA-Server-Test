@@ -32,7 +32,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
-import static ee.ria.tara.config.TaraTestStrings.OIDC_DEF_SCOPE;
+import static ee.ria.tara.config.TaraTestStrings.*;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -78,6 +78,29 @@ public class BanklinkTest extends TestsBase {
         BanklinkMock.setBankDefault(flow, "EYP", "VK_COUNTRY", "EE");
 
         Map bankRequestParams = Banklink.startBankAuthentication(flow, "seb", OIDC_DEF_SCOPE, "et");
+        Map bankResponseParams = BanklinkMock.getBankResponse(flow, bankRequestParams);
+        String location = Banklink.banklinkCallbackPOST(flow, bankResponseParams);
+        Response oidcResponse = Requests.followLoginRedirects(flow, location);
+        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
+
+        assertThat(claims.getSubject(), equalTo("EE60001019896"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo("GIVEN-NAME1"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("TEST-SURNAME"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("2000-01-01"));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo("banklink"));
+    }
+
+    @Test
+    @Feature("TPL-8")
+    public void bank_example_seb_with_scope() throws Exception {
+        BanklinkMock.createBank(flow, "EYP", "seb_priv");
+        BanklinkMock.setBankDefault(flow, "EYP", "VK_OTHER", "ISIK:60001019896;NIMI:Test-Surname,Given-Name1 Givenname2");
+        BanklinkMock.setBankDefault(flow, "EYP", "VK_USER_NAME", "Test-Surname,Given-Name1 Givenname2");
+        BanklinkMock.setBankDefault(flow, "EYP", "VK_USER_ID", "60001019896");
+        BanklinkMock.setBankDefault(flow, "EYP", "VK_COUNTRY", "EE");
+
+        Map bankRequestParams = Banklink.startBankAuthentication(flow, "seb", OIDC_OPENID_SCOPE + OIDC_BANKLINK_SCOPE, "et");
         Map bankResponseParams = BanklinkMock.getBankResponse(flow, bankRequestParams);
         String location = Banklink.banklinkCallbackPOST(flow, bankResponseParams);
         Response oidcResponse = Requests.followLoginRedirects(flow, location);

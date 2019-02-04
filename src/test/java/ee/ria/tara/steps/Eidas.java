@@ -148,4 +148,15 @@ public class Eidas {
                 .extract().response();
     }
 
+    @Step("Initiate eIDAS Authentication with error")
+    public static Response initiateEidasAuthenticationWithError(OpenIdConnectFlow flow, String personCountry, String scope, Object acr) throws InterruptedException, IOException, URISyntaxException {
+        Response taraLoginPage = Requests.getAuthenticationMethodsPageWithScopeAndAcr(flow, scope, acr);
+
+        String execution = taraLoginPage.getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
+        return submitEidasLogin(flow, personCountry, execution);
+    }
+
+    public static String extractError(Response response) {
+        return (String) Steps.extractError(response).get(1);
+    }
 }

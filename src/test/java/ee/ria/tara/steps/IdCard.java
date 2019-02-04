@@ -79,7 +79,7 @@ public class IdCard {
                 .then().extract().response();
     }
 
-    @Step("{flow.endUser}Authenticates with ID-card")
+    @Step("{flow.endUser}Authenticates with ID-card and gets error")
     public static Response authenticateWithIdAndReceiveError(OpenIdConnectFlow flow, String certificateFile, String scope, String locales) throws InterruptedException, URISyntaxException, IOException {
         Map<String, String> formParams = new HashMap<String, String>();
         formParams.put("scope", scope);
@@ -99,6 +99,5 @@ public class IdCard {
 
     public static String extractError(Response response) {
         return (String) Steps.extractError(response).get(1);
-
     }
 }

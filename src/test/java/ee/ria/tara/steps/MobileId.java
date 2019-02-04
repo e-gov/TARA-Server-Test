@@ -123,9 +123,9 @@ public class MobileId {
     }
 
     @Step("Authenticates with Mobile-ID and receives error instantly")
-    public static Response authenticateWithMobileIdError(OpenIdConnectFlow flow, String mobileNo, String idCode) {
+    public static Response authenticateWithMobileIdError(OpenIdConnectFlow flow, String mobileNo, String idCode, String scope) {
         Map<String, String> formParams = new HashMap<String, String>();
-        formParams.put("scope", OIDC_DEF_SCOPE);
+        formParams.put("scope", scope);
         formParams.put("response_type", "code");
         formParams.put("client_id", flow.getRelyingParty().getClientId());
         formParams.put("redirect_uri", flow.getRelyingParty().getRedirectUri());

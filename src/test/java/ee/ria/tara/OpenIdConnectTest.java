@@ -7,10 +7,7 @@ import com.nimbusds.jwt.SignedJWT;
 import ee.ria.tara.config.IntegrationTest;
 import ee.ria.tara.config.TestTaraProperties;
 import ee.ria.tara.model.OpenIdConnectFlow;
-import ee.ria.tara.steps.Eidas;
-import ee.ria.tara.steps.MobileId;
-import ee.ria.tara.steps.Requests;
-import ee.ria.tara.steps.Steps;
+import ee.ria.tara.steps.*;
 import ee.ria.tara.utils.EidasResponseDataUtils;
 import ee.ria.tara.utils.OpenIdConnectUtils;
 import io.qameta.allure.Feature;
@@ -559,6 +556,41 @@ public class OpenIdConnectTest extends TestsBase {
     }
 
     @Test
+    @Feature("OIDC_SCOPES_SUPPORTED")
+    public void checkThatMidIsNotAllowed() throws Exception {
+        String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdError(flow, "00000766", "60001019906", OIDC_OPENID_SCOPE + OIDC_SMARTID_SCOPE));
+        assertThat(errorMessage, startsWith("Keelatud autentimismeetod!"));
+    }
+
+    @Test
+    @Feature("OIDC_SCOPES_SUPPORTED")
+    public void checkThatIdCardIsNotAllowed() throws Exception {
+        String errorMessage = IdCard.extractError(IdCard.authenticateWithIdAndReceiveError(flow, "37101010021.pem", OIDC_OPENID_SCOPE + OIDC_SMARTID_SCOPE, "et"));
+        assertThat(errorMessage, startsWith("Keelatud autentimismeetod!"));
+    }
+
+    @Test
+    @Feature("OIDC_SCOPES_SUPPORTED")
+    public void checkThatBankLinkIsNotAllowed() throws Exception {
+        String errorMessage = Banklink.extractError(Banklink.startBankAuthenticationWithError(flow, "seb", OIDC_OPENID_SCOPE + OIDC_SMARTID_SCOPE, "en"));
+        assertThat(errorMessage, startsWith("Unauthorised authentication method!"));
+    }
+
+    @Test
+    @Feature("OIDC_SCOPES_SUPPORTED")
+    public void checkThatEidasIsNotAllowed() throws Exception {
+        String errorMessage = Eidas.extractError(Eidas.initiateEidasAuthenticationWithError(flow, DEF_COUNTRY, OIDC_OPENID_SCOPE + OIDC_SMARTID_SCOPE, "low"));
+        assertThat(errorMessage, startsWith("Keelatud autentimismeetod!"));
+    }
+
+    @Test
+    @Feature("OIDC_SCOPES_SUPPORTED")
+    public void checkThatSmartIdIsNotAllowed() throws Exception {
+        String errorMessage = SmartId.extractError(SmartId.authenticateWithSmartIdError(flow, "10101010005" , OIDC_OPENID_SCOPE + OIDC_MID_SCOPE));
+        assertThat(errorMessage, startsWith("Keelatud autentimismeetod!"));
+    }
+
+    @Test
     @Feature("OIDC_SCOPES_EIDASONLY")
     public void eidasOnlyScopeShouldShowOnlyEidas() throws Exception {
         Response response = Requests.getAuthenticationMethodsPageWithScope(flow, OIDC_OPENID_SCOPE + OIDC_EIDAS_ONLY_SCOPE);
@@ -592,6 +624,13 @@ public class OpenIdConnectTest extends TestsBase {
         assertThat("ID-Card must not be present", isIdCardPresent(response), is(false));
         assertThat("Bank must not be present", isBankPresent(response), is(false));
         assertThat("Smart-ID not must be present", isSmartIdPresent(response), is(false));
+    }
+
+    @Test
+    @Feature("OIDC_SCOPES_EIDASONLY")
+    public void eidasonlyShouldAllowOnlyEidas() throws Exception {
+        String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdError(flow, "00000766", "60001019906", OIDC_OPENID_SCOPE + OIDC_EIDAS_ONLY_SCOPE));
+        assertThat(errorMessage, startsWith("Keelatud autentimismeetod!"));
     }
 
     private Map<String, String> getQueryParams(String url) throws URISyntaxException {

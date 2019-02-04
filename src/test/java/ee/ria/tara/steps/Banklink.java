@@ -68,4 +68,23 @@ public class Banklink {
                 .get(flow.getOpenIDProvider().getLoginUrl()).then().extract().response()
                 .getHeader("location");
     }
+
+    @Step("Start Banklink authenticcation and receive an error")
+    public static Response startBankAuthenticationWithError(OpenIdConnectFlow flow, String bank, String scope, String locales) throws InterruptedException, URISyntaxException {
+        Map<String, String> formParams = new HashMap<String, String>();
+        formParams.put("scope", scope);
+        formParams.put("response_type", "code");
+        formParams.put("client_id", flow.getRelyingParty().getClientId());
+        formParams.put("redirect_uri", flow.getRelyingParty().getRedirectUri());
+        formParams.put("ui_locales", locales);
+        Response authenticationResponse = Requests.openIdConnectAuthenticationRequest(flow, formParams);
+
+        Response taraLoginPageResponse = Requests.followRedirect(flow, authenticationResponse.getHeader("location"));
+        String execution = taraLoginPageResponse.getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
+        return submitBanklink(flow, execution, bank);
+    }
+
+    public static String extractError(Response response) {
+        return (String) Steps.extractError(response).get(1);
+    }
 }

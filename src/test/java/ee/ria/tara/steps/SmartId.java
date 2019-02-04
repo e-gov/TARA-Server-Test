@@ -122,13 +122,23 @@ public class SmartId {
         throw new RuntimeException("No MID response in: " + (intervalMillis * 3 + 200) + " millis");
     }
 
-    public static List extractError(Response response) {
-        /*Sample list:
-        0 = "Kasutaja tuvastamine ebaõnnestus."
-        1 = "Isikukood on ebakorrektses formaadis."
-        2 = "\n                Intsidendi number: \n                AOO6OBRV9N0BYB6L"
-        */
-        return response.then().extract().response()
-                .htmlPath().getList("**.findAll { it.@class=='alert alert-error' }.p");
+    @Step("Authenticates with Smart-ID and receives error instantly")
+    public static Response authenticateWithSmartIdError(OpenIdConnectFlow flow, String idCode, String scope) {
+        Map<String, String> formParams = new HashMap<String, String>();
+        formParams.put("scope", scope);
+        formParams.put("response_type", "code");
+        formParams.put("client_id", flow.getRelyingParty().getClientId());
+        formParams.put("redirect_uri", flow.getRelyingParty().getRedirectUri());
+        formParams.put("ui_locales", "et");
+        Response authenticationResponse = Requests.openIdConnectAuthenticationRequest(flow, formParams); //getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value")
+        String location = authenticationResponse.then().extract().response()
+                .getHeader("location");
+        Response taraLoginPageResponse = Requests.followRedirect(flow, location);
+        String execution = taraLoginPageResponse.getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
+        return submitSmartIdLogin(flow, idCode, execution, location);
+    }
+
+    public static String extractError(Response response) {
+        return (String) Steps.extractError(response).get(1);
     }
 }

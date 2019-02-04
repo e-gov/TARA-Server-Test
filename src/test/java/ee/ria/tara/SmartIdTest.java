@@ -27,7 +27,7 @@ import java.text.ParseException;
 import java.util.List;
 import java.util.Map;
 
-import static ee.ria.tara.config.TaraTestStrings.OIDC_DEF_SCOPE;
+import static ee.ria.tara.config.TaraTestStrings.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.startsWith;
@@ -80,10 +80,24 @@ public class SmartIdTest extends TestsBase {
     }
 
     @Test
+    @Feature("TSID-12, TSID-13")
+    public void smartidSuccessWithSpecificScope() throws Exception {
+        Response oidcResponse = SmartId.authenticateWithSmartId(flow, "10101010005", 2000, OIDC_OPENID_SCOPE + OIDC_SMARTID_SCOPE);
+        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
+
+        assertThat(claims.getSubject(), equalTo("EE10101010005"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo("DEMO"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("SMART-ID"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("1801-01-01"));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo("smartid"));
+    }
+
+    @Test
     @Feature("TSID-11")
     public void smartid_UserRefuses() throws Exception {
-        List errorMessage = SmartId.extractError(SmartId.authenticatePollError(flow, "10101010016", 2000));
-        assertThat(errorMessage.get(1), equalTo("Autentimine katkestati kasutaja poolt."));
+        String errorMessage = SmartId.extractError(SmartId.authenticatePollError(flow, "10101010016", 2000));
+        assertThat(errorMessage, equalTo("Autentimine katkestati kasutaja poolt."));
     }
 
     /**
@@ -102,8 +116,8 @@ public class SmartIdTest extends TestsBase {
         Response submitResponse = SmartId.submitSmartIdLogin(flow, "12akl2", execution, location);
 
 
-        List errorMessage = SmartId.extractError(submitResponse);
-        assertThat(errorMessage.get(1), equalTo("Isikukood on ebakorrektses formaadis."));
+        String errorMessage = SmartId.extractError(submitResponse);
+        assertThat(errorMessage, equalTo("Isikukood on ebakorrektses formaadis."));
     }
 
     /**
@@ -120,7 +134,7 @@ public class SmartIdTest extends TestsBase {
         Response taraLoginPageResponse = Requests.followRedirect(flow, location);
         String execution = taraLoginPageResponse.getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
         Response submitResponse = SmartId.submitSmartIdLogin(flow, "", execution, location);
-        List errorMessage = SmartId.extractError(submitResponse);
-        assertThat(errorMessage.get(1), equalTo("Isikukood puudu"));
+        String errorMessage = SmartId.extractError(submitResponse);
+        assertThat(errorMessage, equalTo("Isikukood puudu"));
     }
 }

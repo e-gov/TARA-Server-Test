@@ -24,8 +24,7 @@ import java.net.URL;
 import java.security.Security;
 import java.text.ParseException;
 
-import static ee.ria.tara.config.TaraTestStrings.OIDC_AMR_MID;
-import static ee.ria.tara.config.TaraTestStrings.OIDC_DEF_SCOPE;
+import static ee.ria.tara.config.TaraTestStrings.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -78,14 +77,29 @@ public class MobileIdTest extends TestsBase {
     }
 
     @Test
+    public void mob1_mobileIdAuthenticationSuccessWithSpecificSope() throws Exception {
+        Response oidcResponse = MobileId.authenticateWithMobileId(flow, "00000766", "60001019906", 3000, OIDC_OPENID_SCOPE + OIDC_MID_SCOPE);
+        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
+
+        assertThat(claims.getSubject(), equalTo("EE60001019906"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo("MARY ÄNN"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("O’CONNEŽ-ŠUSLIK TESTNUMBER"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("2000-01-01"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").keySet(), not(hasItem("mobile_number")));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo(OIDC_AMR_MID));
+    }
+
+    @Test
     public void mob2_mobileIdAuthenticationMidNotActivated() {
-        String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdError(flow, "00000366", "60001019928"));
+        String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdError(flow, "00000366", "60001019928", OIDC_DEF_SCOPE));
         assertThat(errorMessage, startsWith("Mobiil-ID teenuses esinevad tehnilised tõrked. Palun proovige mõne aja pärast uuesti."));
     }
 
     @Test
     public void mob2_mobileIdAuthenticationUserCertificatesRevoked() {
-        String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdError(flow, "00000266", "60001019939"));
+        String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdError(flow, "00000266", "60001019939", OIDC_DEF_SCOPE));
         assertThat(errorMessage, startsWith("Autentimine Mobiil-ID-ga ei õnnestunud. Testi oma Mobiil-ID toimimist DigiDoc4 kliendis: https://www.id.ee/index.php?id=39003"));
     }
 
@@ -124,7 +138,7 @@ public class MobileIdTest extends TestsBase {
      */
     @Test
     public void mob3_mobileIdAuthenticationInvalidIdCode() {
-        String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdError(flow, "66", "00000766"));
+        String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdError(flow, "66", "00000766", OIDC_DEF_SCOPE));
         assertThat(errorMessage, startsWith("Kasutajal pole Mobiil-ID lepingut"));
     }
 
@@ -133,7 +147,7 @@ public class MobileIdTest extends TestsBase {
      */
     @Test
     public void mob3_mobileIdAuthenticationInvalidPhoneNumber() {
-        String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdError(flow, "123456789123", "60001019906"));
+        String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdError(flow, "123456789123", "60001019906", OIDC_DEF_SCOPE));
         assertThat(errorMessage, startsWith("Kasutajal pole Mobiil-ID lepingut."));
     }
 
@@ -142,7 +156,7 @@ public class MobileIdTest extends TestsBase {
      */
     @Test
     public void mob3_mobileIdAuthenticationNoMobileNo() {
-        String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdError(flow, "", "60001019906"));
+        String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdError(flow, "", "60001019906", OIDC_DEF_SCOPE));
         assertThat(errorMessage, startsWith("Telefoninumber ei ole korrektne."));
     }
 
@@ -151,7 +165,7 @@ public class MobileIdTest extends TestsBase {
      */
     @Test
     public void mob3_mobileIdAuthenticationNoIdCode() {
-        String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdError(flow, "00000766", ""));
+        String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdError(flow, "00000766", "", OIDC_DEF_SCOPE));
         assertThat(errorMessage, startsWith("Isikukood ei ole korrektne."));
     }
 
@@ -160,7 +174,7 @@ public class MobileIdTest extends TestsBase {
      */
     @Test
     public void mob3_mobileIdAuthenticationNoParameters() {
-        String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdError(flow, "", ""));
+        String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdError(flow, "", "", OIDC_DEF_SCOPE));
         assertThat(errorMessage, startsWith("Isikukood ei ole korrektne."));
     }
 }
