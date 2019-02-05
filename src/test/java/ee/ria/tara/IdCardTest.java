@@ -79,7 +79,7 @@ public class IdCardTest extends TestsBase {
     @Test
     @Feature("ID-1")
     public void validLoginWithEsteid2018Certificate() throws Exception {
-        Response oidcResponse = IdCard.authenticateWithIdCard(flow, "38001085718.pem", OIDC_DEF_SCOPE, "et");
+        Response oidcResponse = IdCard.authenticateWithIdCard(flow, "38001085718.pem", OIDC_OPENID_SCOPE + OIDC_EMAIL_SCOPE, "et");
         String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
         JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
 
@@ -87,7 +87,9 @@ public class IdCardTest extends TestsBase {
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo("JAAK-KRISTJAN"));
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("JÕEORG"));
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("1980-01-08"));
-        assertThat(claims.getStringArrayClaim("amr")[0], equalTo("idcard"));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo(OIDC_AMR_IDC));
+        assertThat(claims.getClaim("email"), equalTo("38001085718@eesti.ee"));
+        assertThat(claims.getClaim("email_verified"), equalTo(false));
     }
 
     @Test
@@ -101,13 +103,13 @@ public class IdCardTest extends TestsBase {
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo("JAAK-KRISTJAN"));
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("JÕEORG"));
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("1980-01-08"));
-        assertThat(claims.getStringArrayClaim("amr")[0], equalTo("idcard"));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo(OIDC_AMR_IDC));
     }
 
     @Test
     @Feature("ID-1")
     public void validLoginWithEsteid2015RsaCertificate() throws Exception {
-        Response oidcResponse = IdCard.authenticateWithIdCard(flow, "37101010021.pem", OIDC_DEF_SCOPE, "et");
+        Response oidcResponse = IdCard.authenticateWithIdCard(flow, "37101010021.pem", OIDC_OPENID_SCOPE + OIDC_EMAIL_SCOPE, "et");
         String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
         JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
 
@@ -115,13 +117,15 @@ public class IdCardTest extends TestsBase {
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo("IGOR"));
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("ŽAIKOVSKI"));
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("1971-01-01"));
-        assertThat(claims.getStringArrayClaim("amr")[0], equalTo("idcard"));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo(OIDC_AMR_IDC));
+        assertThat(claims.getClaim("email"), equalTo("igor.zaikovski.3@eesti.ee"));
+        assertThat(claims.getClaim("email_verified"), equalTo(false));
     }
 
     @Test
     @Feature("ID-1")
     public void validLoginWithEsteid2015EccCertificate() throws Exception {
-        Response oidcResponse = IdCard.authenticateWithIdCard(flow, "47101010033.pem", OIDC_DEF_SCOPE, "et");
+        Response oidcResponse = IdCard.authenticateWithIdCard(flow, "47101010033.pem", OIDC_OPENID_SCOPE + OIDC_EMAIL_SCOPE, "et");
         String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
         JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
 
@@ -129,7 +133,9 @@ public class IdCardTest extends TestsBase {
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo("MARI-LIIS"));
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("MÄNNIK"));
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("1971-01-01"));
-        assertThat(claims.getStringArrayClaim("amr")[0], equalTo("idcard"));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo(OIDC_AMR_IDC));
+        assertThat(claims.getClaim("email"), equalTo("mari-liis.mannik@eesti.ee"));
+        assertThat(claims.getClaim("email_verified"), equalTo(false));
     }
 
     @Test

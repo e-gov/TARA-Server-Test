@@ -75,7 +75,7 @@ public class SmartId {
                 return response;
             }
         }
-        throw new RuntimeException("No MID response in: " + (intervalMillis * 3 + 200) + " millis");
+        throw new RuntimeException("No Smart-ID response in: " + (intervalMillis * 3 + 200) + " millis");
     }
 
     @Step("{flow.endUser}Authenticates with Smart-ID and poll for errors")

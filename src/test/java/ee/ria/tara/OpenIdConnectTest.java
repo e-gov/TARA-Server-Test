@@ -483,7 +483,7 @@ public class OpenIdConnectTest extends TestsBase {
     @Test
     @Feature("OIDC_SCOPES_SUPPORTED")
     public void allAuthenticationMethodsPresentWhenAskedWithScopesIndividually() throws Exception {
-        Response response = Requests.getAuthenticationMethodsPageWithScope(flow, OIDC_OPENID_SCOPE + OIDC_IDCARD_SCOPE + OIDC_MID_SCOPE + OIDC_EIDAS_SCOPE + OIDC_BANKLINK_SCOPE + OIDC_SMARTID_SCOPE);
+        Response response = Requests.getAuthenticationMethodsPageWithScope(flow, OIDC_IDCARD_SCOPE + OIDC_MID_SCOPE + OIDC_EIDAS_SCOPE + OIDC_BANKLINK_SCOPE + OIDC_SMARTID_SCOPE + OIDC_OPENID_SCOPE);
 
         assertThat("eIDAS must be present", isEidasPresent(response));
         assertThat("MID must be present", isMidPresent(response));
@@ -568,6 +568,7 @@ public class OpenIdConnectTest extends TestsBase {
     @Feature("OIDC_SCOPES_SUPPORTED")
     public void checkThatMidIsNotAllowed() throws Exception {
         String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdError(flow, "00000766", "60001019906", OIDC_OPENID_SCOPE + OIDC_SMARTID_SCOPE));
+
         assertThat(errorMessage, startsWith("Keelatud autentimismeetod!"));
     }
 
@@ -575,6 +576,7 @@ public class OpenIdConnectTest extends TestsBase {
     @Feature("OIDC_SCOPES_SUPPORTED")
     public void checkThatIdCardIsNotAllowed() throws Exception {
         String errorMessage = IdCard.extractError(IdCard.authenticateWithIdAndReceiveError(flow, "37101010021.pem", OIDC_OPENID_SCOPE + OIDC_SMARTID_SCOPE, "et"));
+
         assertThat(errorMessage, startsWith("Keelatud autentimismeetod!"));
     }
 
@@ -582,6 +584,7 @@ public class OpenIdConnectTest extends TestsBase {
     @Feature("OIDC_SCOPES_SUPPORTED")
     public void checkThatBankLinkIsNotAllowed() throws Exception {
         String errorMessage = Banklink.extractError(Banklink.startBankAuthenticationWithError(flow, "seb", OIDC_OPENID_SCOPE + OIDC_SMARTID_SCOPE, "en"));
+
         assertThat(errorMessage, startsWith("Unauthorised authentication method!"));
     }
 
@@ -589,6 +592,7 @@ public class OpenIdConnectTest extends TestsBase {
     @Feature("OIDC_SCOPES_SUPPORTED")
     public void checkThatEidasIsNotAllowed() throws Exception {
         String errorMessage = Eidas.extractError(Eidas.initiateEidasAuthenticationWithError(flow, DEF_COUNTRY, OIDC_OPENID_SCOPE + OIDC_SMARTID_SCOPE, "low"));
+
         assertThat(errorMessage, startsWith("Keelatud autentimismeetod!"));
     }
 
@@ -596,6 +600,7 @@ public class OpenIdConnectTest extends TestsBase {
     @Feature("OIDC_SCOPES_SUPPORTED")
     public void checkThatSmartIdIsNotAllowed() throws Exception {
         String errorMessage = SmartId.extractError(SmartId.authenticateWithSmartIdError(flow, "10101010005" , OIDC_OPENID_SCOPE + OIDC_MID_SCOPE));
+
         assertThat(errorMessage, startsWith("Keelatud autentimismeetod!"));
     }
 
@@ -639,7 +644,68 @@ public class OpenIdConnectTest extends TestsBase {
     @Feature("OIDC_SCOPES_EIDASONLY")
     public void eidasonlyShouldAllowOnlyEidas() throws Exception {
         String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdError(flow, "00000766", "60001019906", OIDC_OPENID_SCOPE + OIDC_EIDAS_ONLY_SCOPE));
+
         assertThat(errorMessage, startsWith("Keelatud autentimismeetod!"));
+    }
+
+    @Test
+    @Feature("OIDC_SCOPE_EMAIL")
+    public void emailScopeReturnsValues() throws Exception {
+        Response oidcResponse = IdCard.authenticateWithIdCard(flow, "38001085718.pem", OIDC_OPENID_SCOPE + OIDC_EMAIL_SCOPE, "et");
+        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
+
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo(OIDC_AMR_IDC));
+        assertThat(claims.getClaim("email"), equalTo("38001085718@eesti.ee"));
+        assertThat(claims.getClaim("email_verified"), equalTo(false));
+    }
+
+    @Test
+    @Feature("OIDC_SCOPE_EMAIL")
+    public void emailScopeReturnsValuesWithIdCardScope() throws Exception {
+        Response oidcResponse = IdCard.authenticateWithIdCard(flow, "38001085718.pem", OIDC_OPENID_SCOPE + OIDC_EMAIL_SCOPE + OIDC_IDCARD_SCOPE, "et");
+        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
+
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo(OIDC_AMR_IDC));
+        assertThat(claims.getClaim("email"), equalTo("38001085718@eesti.ee"));
+        assertThat(claims.getClaim("email_verified"), equalTo(false));
+    }
+
+    @Test
+    @Feature("OIDC_SCOPE_EMAIL")
+    public void emailScopeMissingEmailNotReturned() throws Exception {
+        Response oidcResponse = IdCard.authenticateWithIdCard(flow, "38001085718.pem", OIDC_OPENID_SCOPE, "et");
+        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
+
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo(OIDC_AMR_IDC));
+        assertThat(claims.getClaim("email"), is(nullValue()));
+        assertThat(claims.getClaim("email_verified"), is(nullValue()));
+    }
+
+    @Test
+    @Feature("OIDC_SCOPE_EMAIL")
+    public void emailScopeNotSupportedAndShouldNotBeReturned() throws Exception {
+        Response oidcResponse = MobileId.authenticateWithMobileId(flow, "00000766", "60001019906", 3000, OIDC_OPENID_SCOPE);
+        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
+
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo(OIDC_AMR_MID));
+        assertThat(claims.getClaim("email"), is(nullValue()));
+        assertThat(claims.getClaim("email_verified"), is(nullValue()));
+    }
+
+    @Test
+    @Feature("OIDC_SCOPE_EMAIL")
+    public void emailScopeNotSupportedButAskedShouldNotBeReturned() throws Exception {
+        Response oidcResponse = SmartId.authenticateWithSmartId(flow, "10101010005", 3000, OIDC_OPENID_SCOPE + OIDC_EMAIL_SCOPE);
+        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
+
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo(OIDC_AMR_SMARTID));
+        assertThat(claims.getClaim("email"), is(nullValue()));
+        assertThat(claims.getClaim("email_verified"), is(nullValue()));
     }
 
     private Map<String, String> getQueryParams(String url) throws URISyntaxException {

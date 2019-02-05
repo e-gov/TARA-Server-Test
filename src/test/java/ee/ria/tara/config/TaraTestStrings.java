@@ -41,6 +41,8 @@ public class TaraTestStrings {
     public static final String OIDC_AMR_MID = "mID";
     public static final String OIDC_AMR_IDC = "idcard";
     public static final String OIDC_AMR_EIDAS = "eIDAS";
+    public static final String OIDC_AMR_SMARTID = "smartid";
+    public static final String OIDC_AMR_BANKLINK = "banklink";
     public static final String OIDC_DEF_SCOPE = "openid";
     public static final String OIDC_OPENID_SCOPE = "openid ";
     public static final String OIDC_EIDAS_ONLY_SCOPE = "eidasonly ";
