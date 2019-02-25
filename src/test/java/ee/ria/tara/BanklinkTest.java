@@ -5,6 +5,7 @@ import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import ee.ria.tara.config.IntegrationTest;
+import ee.ria.tara.config.TestConfiguration;
 import ee.ria.tara.config.TestTaraProperties;
 import ee.ria.tara.model.OpenIdConnectFlow;
 import ee.ria.tara.steps.Banklink;
@@ -13,7 +14,10 @@ import ee.ria.tara.steps.Requests;
 import ee.ria.tara.steps.Steps;
 import ee.ria.tara.utils.Feature;
 import ee.ria.tara.utils.OpenIdConnectUtils;
+import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.hamcrest.core.StringContains;
 import org.junit.Before;
@@ -28,6 +32,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.security.Security;
 import java.text.ParseException;
+import java.time.Instant;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -44,6 +50,16 @@ public class BanklinkTest extends TestsBase {
     private ResourceLoader resourceLoader;
     private static boolean setupComplete = false;
     private OpenIdConnectFlow flow;
+
+    @Data
+    @AllArgsConstructor
+    class ExpectedOutput {
+        private String subject;
+        private String firstName;
+        private String familyName;
+        private String dateOfBirth;
+        private String amr;
+    }
 
     @Before
     public void setUp() throws IOException, ParseException {
@@ -81,14 +97,19 @@ public class BanklinkTest extends TestsBase {
         Map bankResponseParams = BanklinkMock.getBankResponse(flow, bankRequestParams);
         String location = Banklink.banklinkCallbackPOST(flow, bankResponseParams);
         Response oidcResponse = Requests.followLoginRedirects(flow, location);
-        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
+        Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token.get("id_token")).getJWTClaimsSet();
 
-        assertThat(claims.getSubject(), equalTo("EE60001019896"));
-        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo("GIVEN-NAME1"));
-        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("TEST-SURNAME"));
-        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("2000-01-01"));
-        assertThat(claims.getStringArrayClaim("amr")[0], equalTo("banklink"));
+        BanklinkTest.ExpectedOutput expectedOutcome = new BanklinkTest.ExpectedOutput("EE60001019896", "GIVEN-NAME1", "TEST-SURNAME", "2000-01-01", OIDC_AMR_BANKLINK);
+
+
+        assertThat(claims.getSubject(), equalTo(expectedOutcome.getSubject()));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo(expectedOutcome.getFirstName()));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo(expectedOutcome.getFamilyName()));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo(expectedOutcome.getDateOfBirth()));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo(expectedOutcome.getAmr()));
+
+        assertValidUserinfoResponse(expectedOutcome, token);
     }
 
     @Test
@@ -104,14 +125,19 @@ public class BanklinkTest extends TestsBase {
         Map bankResponseParams = BanklinkMock.getBankResponse(flow, bankRequestParams);
         String location = Banklink.banklinkCallbackPOST(flow, bankResponseParams);
         Response oidcResponse = Requests.followLoginRedirects(flow, location);
-        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
+        Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token.get("id_token")).getJWTClaimsSet();
 
-        assertThat(claims.getSubject(), equalTo("EE60001019896"));
-        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo("GIVEN-NAME1"));
-        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("TEST-SURNAME"));
-        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("2000-01-01"));
-        assertThat(claims.getStringArrayClaim("amr")[0], equalTo("banklink"));
+        BanklinkTest.ExpectedOutput expectedOutcome = new BanklinkTest.ExpectedOutput("EE60001019896", "GIVEN-NAME1", "TEST-SURNAME", "2000-01-01", OIDC_AMR_BANKLINK);
+
+
+        assertThat(claims.getSubject(), equalTo(expectedOutcome.getSubject()));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo(expectedOutcome.getFirstName()));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo(expectedOutcome.getFamilyName()));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo(expectedOutcome.getDateOfBirth()));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo(expectedOutcome.getAmr()));
+
+        assertValidUserinfoResponse(expectedOutcome, token);
     }
 
     @Test
@@ -127,14 +153,19 @@ public class BanklinkTest extends TestsBase {
         Map bankResponseParams = BanklinkMock.getBankResponse(flow, bankRequestParams);
         String location = Banklink.banklinkCallbackPOST(flow, bankResponseParams);
         Response oidcResponse = Requests.followLoginRedirects(flow, location);
-        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
+        Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token.get("id_token")).getJWTClaimsSet();
 
-        assertThat(claims.getSubject(), equalTo("EE60001019896"));
-        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo("GIVEN-NAME1"));
-        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("TEST-SURNAME"));
-        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("2000-01-01"));
-        assertThat(claims.getStringArrayClaim("amr")[0], equalTo("banklink"));
+        BanklinkTest.ExpectedOutput expectedOutcome = new BanklinkTest.ExpectedOutput("EE60001019896", "GIVEN-NAME1", "TEST-SURNAME", "2000-01-01", OIDC_AMR_BANKLINK);
+
+
+        assertThat(claims.getSubject(), equalTo(expectedOutcome.getSubject()));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo(expectedOutcome.getFirstName()));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo(expectedOutcome.getFamilyName()));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo(expectedOutcome.getDateOfBirth()));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo(expectedOutcome.getAmr()));
+
+        assertValidUserinfoResponse(expectedOutcome, token);
     }
 
     @Test
@@ -150,14 +181,18 @@ public class BanklinkTest extends TestsBase {
         Map bankResponseParams = BanklinkMock.getBankResponse(flow, bankRequestParams);
         String location = Banklink.banklinkCallbackGET(flow, bankResponseParams);
         Response oidcResponse = Requests.followLoginRedirects(flow, location);
-        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
+        Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token.get("id_token")).getJWTClaimsSet();
 
-        assertThat(claims.getSubject(), equalTo("EE60001019896"));
-        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo("GIVEN-NAME1"));
-        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("TEST-SURNAME"));
-        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("2000-01-01"));
-        assertThat(claims.getStringArrayClaim("amr")[0], equalTo("banklink"));
+        BanklinkTest.ExpectedOutput expectedOutcome = new BanklinkTest.ExpectedOutput("EE60001019896", "GIVEN-NAME1", "TEST-SURNAME", "2000-01-01", OIDC_AMR_BANKLINK);
+
+        assertThat(claims.getSubject(), equalTo(expectedOutcome.getSubject()));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo(expectedOutcome.getFirstName()));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo(expectedOutcome.getFamilyName()));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo(expectedOutcome.getDateOfBirth()));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo(expectedOutcome.getAmr()));
+
+        assertValidUserinfoResponse(expectedOutcome, token);
     }
 
     @Test
@@ -174,15 +209,20 @@ public class BanklinkTest extends TestsBase {
         Map bankResponseParams = BanklinkMock.getBankResponse(flow, bankRequestParams);
         String location = Banklink.banklinkCallbackPOST(flow, bankResponseParams);
         Response oidcResponse = Requests.followLoginRedirects(flow, location);
-        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
+        Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token.get("id_token")).getJWTClaimsSet();
 
-        assertThat(claims.getSubject(), equalTo("EE60001019896"));
-        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo("GIVEN-NAME1 GIVEN-NAME2"));
-        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("TEST-SURNAME"));
-        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("2000-01-01"));
-        assertThat(claims.getStringArrayClaim("amr")[0], equalTo("banklink"));
+        BanklinkTest.ExpectedOutput expectedOutcome = new BanklinkTest.ExpectedOutput("EE60001019896", "GIVEN-NAME1 GIVEN-NAME2", "TEST-SURNAME", "2000-01-01", OIDC_AMR_BANKLINK);
+
+        assertThat(claims.getSubject(), equalTo(expectedOutcome.getSubject()));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo(expectedOutcome.getFirstName()));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo(expectedOutcome.getFamilyName()));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo(expectedOutcome.getDateOfBirth()));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo(expectedOutcome.getAmr()));
+
+        assertValidUserinfoResponse(expectedOutcome, token);
     }
+
     @Test
     @Feature("TPL-8")
     public void bank_example_luminor() throws Exception {
@@ -197,14 +237,18 @@ public class BanklinkTest extends TestsBase {
         Map bankResponseParams = BanklinkMock.getBankResponse(flow, bankRequestParams);
         String location = Banklink.banklinkCallbackPOST(flow, bankResponseParams);
         Response oidcResponse = Requests.followLoginRedirects(flow, location);
-        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
+        Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token.get("id_token")).getJWTClaimsSet();
 
-        assertThat(claims.getSubject(), equalTo("EE60001019896"));
-        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo("GIVEN-NAME1"));
-        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("TEST-SURNAME"));
-        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("2000-01-01"));
-        assertThat(claims.getStringArrayClaim("amr")[0], equalTo("banklink"));
+        BanklinkTest.ExpectedOutput expectedOutcome = new BanklinkTest.ExpectedOutput("EE60001019896", "GIVEN-NAME1", "TEST-SURNAME", "2000-01-01", OIDC_AMR_BANKLINK);
+
+        assertThat(claims.getSubject(), equalTo(expectedOutcome.getSubject()));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo(expectedOutcome.getFirstName()));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo(expectedOutcome.getFamilyName()));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo(expectedOutcome.getDateOfBirth()));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo(expectedOutcome.getAmr()));
+
+        assertValidUserinfoResponse(expectedOutcome, token);
     }
 
     @Test
@@ -262,8 +306,8 @@ public class BanklinkTest extends TestsBase {
         Map bankResponseParams = BanklinkMock.getBankResponse(flow, bankRequestParams);
         String location = Banklink.banklinkCallbackPOST(flow, bankResponseParams);
         Response oidcResponse = Requests.followLoginRedirects(flow, location);
-        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        SignedJWT signedJWT = Steps.verifyTokenAndReturnSignedJwtObject(flow, token);
+        Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        SignedJWT signedJWT = Steps.verifyTokenAndReturnSignedJwtObject(flow, token.get("id_token"));
 
         String responseBody = given().filter(flow.getCookieFilter()).relaxedHTTPSValidation().formParams(bankResponseParams).post(flow.getOpenIDProvider().getLoginUrl()).then().statusCode(401).extract().response().body().asString();
         assertThat(responseBody, StringContains.containsString("Kasutaja tuvastamine ebaõnnestus"));
@@ -279,8 +323,8 @@ public class BanklinkTest extends TestsBase {
         Map bankResponseParams = BanklinkMock.getBankResponse(flow, bankRequestParams);
         String location = Banklink.banklinkCallbackPOST(flow, bankResponseParams);
         Response oidcResponse = Requests.followLoginRedirects(flow, location);
-        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        SignedJWT signedJWT = Steps.verifyTokenAndReturnSignedJwtObject(flow, token);
+        Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        SignedJWT signedJWT = Steps.verifyTokenAndReturnSignedJwtObject(flow, token.get("id_token"));
 
         String responseBody = given().filter(flow.getCookieFilter()).relaxedHTTPSValidation().formParams(bankResponseParams).post(flow.getOpenIDProvider().getLoginUrl()).then().statusCode(401).extract().response().body().asString();
         assertThat(responseBody, StringContains.containsString("Kasutaja tuvastamine ebaõnnestus"));
@@ -298,8 +342,8 @@ public class BanklinkTest extends TestsBase {
         Map bankResponseParams = BanklinkMock.getBankResponse(flow, bankRequestParams);
         String location = Banklink.banklinkCallbackPOST(flow, bankResponseParams);
         Response oidcResponse = Requests.followLoginRedirects(flow, location);
-        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
+        Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token.get("id_token")).getJWTClaimsSet();
 
         assertThat(claims.getSubject(), equalTo("LV320000-00000"));
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo("GIVEN-NAME1"));
@@ -320,5 +364,26 @@ public class BanklinkTest extends TestsBase {
         redirectResponse.then()
                 .header("Content-Security-Policy", containsString(
                         "form-action " + bankRedirectUrl + " 'self' " + flow.getTestProperties().getManageUrl() + " " + flow.getRelyingParty().getRedirectUri()));
+    }
+
+    private void assertValidUserinfoResponse(BanklinkTest.ExpectedOutput expectedOutcome, Map<String, String> token) {
+        assertValidUserinfoResponse(expectedOutcome,
+                Requests.getUserInfoWithAccessTokenAsBearerToken(flow, token.get("access_token"), flow.getOpenIDProvider().getUserInfoUrl())
+        );
+
+        assertValidUserinfoResponse(expectedOutcome,
+                Requests.getUserInfoWithAccessTokenAsQueryParameter(flow, token.get("access_token"), flow.getOpenIDProvider().getUserInfoUrl())
+        );
+    }
+
+    private void assertValidUserinfoResponse(BanklinkTest.ExpectedOutput expectedOutcome, Response userInfoResponse) {
+        JsonPath json = userInfoResponse.jsonPath();
+        assertThat(json.getMap("$.").keySet(), hasItems("sub", "auth_time", "given_name", "family_name", "date_of_birth", "amr"));
+        assertThat(json.get("sub"), equalTo(expectedOutcome.getSubject()));
+        assertThat("auth_time must be a unix timestamp format and within the allowed timeframe", json.getLong("auth_time"), is(both(greaterThan(new Long(Instant.now().getEpochSecond() - TestConfiguration.ALLOWED_TIME_DIFFERENCE_IN_SECONDS))).and(lessThanOrEqualTo(Instant.now().getEpochSecond()))));
+        assertThat(json.get("given_name"), equalTo(expectedOutcome.getFirstName()));
+        assertThat(json.get("family_name"), equalTo(expectedOutcome.getFamilyName()));
+        assertThat(json.get("date_of_birth"), equalTo(expectedOutcome.getDateOfBirth()));
+        assertThat(json.getList("amr"), equalTo(Arrays.asList(expectedOutcome.getAmr())));
     }
 }

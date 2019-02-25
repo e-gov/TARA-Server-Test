@@ -8,4 +8,6 @@ import org.springframework.context.annotation.Configuration;
         TestTaraProperties.class
 })
 public class TestConfiguration {
+
+    public static int ALLOWED_TIME_DIFFERENCE_IN_SECONDS = 30;
 }

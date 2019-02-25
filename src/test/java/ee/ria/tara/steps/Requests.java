@@ -6,13 +6,18 @@ import ee.ria.tara.utils.AllureRestAssuredFormParam;
 import ee.ria.tara.utils.OpenIdConnectUtils;
 import io.qameta.allure.Step;
 import io.restassured.http.ContentType;
+import io.restassured.http.Header;
+import io.restassured.http.Headers;
 import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Map;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.notNullValue;
 
 public class Requests {
     @Step("Get token")
@@ -62,6 +67,40 @@ public class Requests {
                 .header("Authorization", OpenIdConnectUtils.getAuthorization(flow.getRelyingParty().getClientId(), flow.getRelyingParty().getSecret()))
                 .urlEncodingEnabled(true)
                 .post(flow.getOpenIDProvider().getTokenUrl())
+                .then()
+                .extract().response();
+    }
+
+    @Step("{flow.endUser}GET UserInfo")
+    public static Response getUserInfoWithAccessTokenAsBearerToken(OpenIdConnectFlow flow, String accessToken, String location) {
+        RequestSpecification request = given()
+                .filter(flow.getCookieFilter())
+                .filter(new AllureRestAssuredFormParam())
+                .relaxedHTTPSValidation();
+
+        if (accessToken != null)
+            request.header("Authorization", "Bearer " + accessToken);
+
+        return request
+                .when()
+                    .get(location)
+                .then()
+                    .extract().response();
+    }
+
+    @Step("{flow.endUser}GET UserInfo")
+    public static Response getUserInfoWithAccessTokenAsQueryParameter(OpenIdConnectFlow flow, String accessToken, String location) {
+        RequestSpecification request = given()
+                .filter(flow.getCookieFilter())
+                .filter(new AllureRestAssuredFormParam())
+                .relaxedHTTPSValidation()
+            .when();
+
+        if (accessToken != null)
+            request.queryParam("access_token", accessToken);
+
+        return request
+                .get(location)
                 .then()
                 .extract().response();
     }
@@ -191,8 +230,8 @@ public class Requests {
         return Requests.followRedirect(flow, location);
     }
 
-    public static String getIdToken(OpenIdConnectFlow flow, String authorizationCode) {
+    public static Map<String, String> getTokenResponse(OpenIdConnectFlow flow, String authorizationCode) {
         Response response = Requests.postToTokenEndpoint(flow, authorizationCode);
-        return response.getBody().jsonPath().getString("id_token");
+        return response.jsonPath().getMap("$.");
     }
 }

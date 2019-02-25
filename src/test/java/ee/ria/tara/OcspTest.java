@@ -82,8 +82,8 @@ public class OcspTest extends TestsBase {
         OcspMock.setStatus(flow, "141811770701420873040773020899829622874", ocspResponseData);
 
         Response oidcResponse = IdCard.authenticateWithIdCard(flow, "141811770701420873040773020899829622874.pem", OIDC_DEF_SCOPE, "et");
-        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
+        Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token.get("id_token")).getJWTClaimsSet();
         assertThat(claims.getSubject(), equalTo("EE37101010021"));
     }
 
@@ -161,8 +161,8 @@ public class OcspTest extends TestsBase {
         OcspMock.setStatus(flow, "141811770701420873040773020899829622874", ocspResponseData);
 
         Response oidcResponse = IdCard.authenticateWithIdCard(flow, "141811770701420873040773020899829622874.pem", OIDC_DEF_SCOPE, "et");
-        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
+        Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token.get("id_token")).getJWTClaimsSet();
         assertThat(claims.getSubject(), equalTo("EE37101010021"));
     }
 
