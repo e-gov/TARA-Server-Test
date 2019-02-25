@@ -10,6 +10,7 @@ public class OpenIDProvider {
     private String jwksUrl;
     private String authorizeUrl;
     private String tokenUrl;
+    private String userInfoUrl;
     private String loginUrl;
     private String backendUrl;
 

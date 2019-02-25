@@ -1,9 +1,11 @@
 package ee.ria.tara;
 
 
+import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jwt.JWTClaimsSet;
 import ee.ria.tara.config.IntegrationTest;
+import ee.ria.tara.config.TestConfiguration;
 import ee.ria.tara.config.TestTaraProperties;
 import ee.ria.tara.model.OpenIdConnectFlow;
 import ee.ria.tara.steps.Requests;
@@ -11,6 +13,7 @@ import ee.ria.tara.steps.SmartId;
 import ee.ria.tara.steps.Steps;
 import ee.ria.tara.utils.Feature;
 import ee.ria.tara.utils.OpenIdConnectUtils;
+import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Before;
@@ -24,13 +27,15 @@ import java.io.IOException;
 import java.net.URL;
 import java.security.Security;
 import java.text.ParseException;
-import java.util.List;
+import java.time.Instant;
+import java.util.Arrays;
 import java.util.Map;
 
 import static ee.ria.tara.config.TaraTestStrings.*;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.startsWith;
+import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.lessThan;
 
 
 @SpringBootTest(classes = SmartIdTest.class)
@@ -69,28 +74,21 @@ public class SmartIdTest extends TestsBase {
     @Feature("TSID-12, TSID-13")
     public void smartidSuccess() throws Exception {
         Response oidcResponse = SmartId.authenticateWithSmartId(flow, "10101010005", 2000, OIDC_DEF_SCOPE);
-        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
+        Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
 
-        assertThat(claims.getSubject(), equalTo("EE10101010005"));
-        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo("DEMO"));
-        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("SMART-ID"));
-        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("1801-01-01"));
-        assertThat(claims.getStringArrayClaim("amr")[0], equalTo("smartid"));
+        assertValidIdToken(token);
+
+        assertValidUserInfoResponse(token);
     }
 
     @Test
     @Feature("TSID-12, TSID-13")
     public void smartidSuccessWithSpecificScope() throws Exception {
         Response oidcResponse = SmartId.authenticateWithSmartId(flow, "10101010005", 2000, OIDC_OPENID_SCOPE + OIDC_SMARTID_SCOPE);
-        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
+        Map<String, String> token =  Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        assertValidIdToken(token);
 
-        assertThat(claims.getSubject(), equalTo("EE10101010005"));
-        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo("DEMO"));
-        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("SMART-ID"));
-        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("1801-01-01"));
-        assertThat(claims.getStringArrayClaim("amr")[0], equalTo("smartid"));
+        assertValidUserInfoResponse(token);
     }
 
     @Test
@@ -136,5 +134,36 @@ public class SmartIdTest extends TestsBase {
         Response submitResponse = SmartId.submitSmartIdLogin(flow, "", execution, location);
         String errorMessage = SmartId.extractError(submitResponse);
         assertThat(errorMessage, equalTo("Isikukood puudu"));
+    }
+
+    private void assertValidUserInfoResponse(Map<String, String> token) {
+        assertValidUserinfoResponse(
+                Requests.getUserInfoWithAccessTokenAsBearerToken(flow, token.get("access_token"), flow.getOpenIDProvider().getUserInfoUrl())
+        );
+
+        assertValidUserinfoResponse(
+                Requests.getUserInfoWithAccessTokenAsQueryParameter(flow, token.get("access_token"), flow.getOpenIDProvider().getUserInfoUrl())
+        );
+    }
+
+    private void assertValidIdToken(Map<String, String> token) throws ParseException, JOSEException, IOException {
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token.get("id_token")).getJWTClaimsSet();
+
+        assertThat(claims.getSubject(), equalTo("EE10101010005"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo("DEMO"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("SMART-ID"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("1801-01-01"));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo("smartid"));
+    }
+
+    private void assertValidUserinfoResponse(Response userInfoResponse) {
+        JsonPath json = userInfoResponse.jsonPath();
+        assertThat(json.getMap("$.").keySet(), hasItems("sub", "auth_time", "given_name", "family_name", "date_of_birth", "amr"));
+        assertThat(json.get("sub"), equalTo("EE10101010005"));
+        assertThat("auth_time must be a unix timestamp format and within the allowed timeframe", json.getLong("auth_time"), is(both(greaterThan(new Long(Instant.now().getEpochSecond() - TestConfiguration.ALLOWED_TIME_DIFFERENCE_IN_SECONDS))).and(lessThanOrEqualTo(Instant.now().getEpochSecond()))));
+        assertThat(json.get("given_name"), equalTo("DEMO"));
+        assertThat(json.get("family_name"), equalTo("SMART-ID"));
+        assertThat(json.get("date_of_birth"), equalTo("1801-01-01"));
+        assertThat(json.getList("amr"), equalTo(Arrays.asList(OIDC_AMR_SMARTID)));
     }
 }

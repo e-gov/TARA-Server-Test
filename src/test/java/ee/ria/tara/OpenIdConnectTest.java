@@ -8,6 +8,7 @@ import ee.ria.tara.config.IntegrationTest;
 import ee.ria.tara.config.TestTaraProperties;
 import ee.ria.tara.model.OpenIdConnectFlow;
 import ee.ria.tara.steps.*;
+import ee.ria.tara.utils.AllureRestAssuredFormParam;
 import ee.ria.tara.utils.EidasResponseDataUtils;
 import ee.ria.tara.utils.OpenIdConnectUtils;
 import io.qameta.allure.Feature;
@@ -16,11 +17,12 @@ import io.qameta.allure.Link;
 import io.restassured.config.RestAssuredConfig;
 import io.restassured.config.SSLConfig;
 import io.restassured.response.Response;
+import io.restassured.specification.RequestSenderOptions;
+import io.restassured.specification.RequestSpecification;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.opensaml.core.config.InitializationException;
@@ -45,6 +47,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static ee.ria.tara.config.TaraTestStrings.*;
+import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -107,8 +110,8 @@ public class OpenIdConnectTest extends TestsBase {
     //TODO: duplicate with MobileIdTest.mob1_mobileIdAuthenticationSuccessWithRealLifeDelay
     public void oidc1_authenticationWithMidShouldSucceed() throws Exception {
         Response oidcResponse = MobileId.authenticateWithMobileId(flow, "00000766", "60001019906", 7000, OIDC_DEF_SCOPE);
-        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
+        Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token.get("id_token")).getJWTClaimsSet();
 
         assertThat(claims.getSubject(), equalTo("EE60001019906"));
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo("MARY ÄNN"));
@@ -128,8 +131,8 @@ public class OpenIdConnectTest extends TestsBase {
 
         String location = Eidas.returnEidasResponse(flow, samlResponse, relayState);
         Response oidcResponse = Requests.followLoginRedirects(flow, location);
-        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
+        Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token.get("id_token")).getJWTClaimsSet();
 
         assertThat(claims.getSubject(), equalTo("EE30011092212"));
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo(DEFATTR_FIRST));
@@ -141,8 +144,8 @@ public class OpenIdConnectTest extends TestsBase {
     @Test
     public void oidc1_MetadataAndTokenKeyIdMatches() throws Exception {
         Response oidcResponse = MobileId.authenticateWithMobileId(flow, "00000766", "60001019906", 7000, OIDC_DEF_SCOPE);
-        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        SignedJWT signedJWT = Steps.verifyTokenAndReturnSignedJwtObject(flow, token);
+        Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        SignedJWT signedJWT = Steps.verifyTokenAndReturnSignedJwtObject(flow, token.get("id_token"));
 
         assertThat(flow.getOpenIDProvider().getJwkSet().getKeys().get(0).getKeyID(), equalTo(signedJWT.getHeader().getKeyID()));
     }
@@ -152,7 +155,7 @@ public class OpenIdConnectTest extends TestsBase {
     //TODO: Should be invalid_grant according to https://tools.ietf.org/html/rfc6749#section-5.2
     public void oidc2_requestTokenTwiceShouldFail() throws Exception {
         Response oidcResponse = MobileId.authenticateWithMobileId(flow, "00000766", "60001019906", 7000, OIDC_DEF_SCOPE);
-        Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
 
         Response response = Requests.postToTokenEndpoint(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
         response.then().statusCode(400);
@@ -292,8 +295,8 @@ public class OpenIdConnectTest extends TestsBase {
     @Test
     public void oidc2_stateAndNonceInIdTokenResponseShouldMatchExpected() throws Exception {
         Response oidcResponse = MobileId.authenticateWithMobileId(flow, "00000766", "60001019906", 3000, OIDC_DEF_SCOPE);
-        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        JWTClaimsSet claims = SignedJWT.parse(token).getJWTClaimsSet();
+        Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        JWTClaimsSet claims = SignedJWT.parse(token.get("id_token")).getJWTClaimsSet();
         assertThat(claims.getStringClaim("nonce"), equalTo(flow.getNonce()));
         assertThat(claims.getStringClaim("state"), equalTo(flow.getState()));
     }
@@ -332,8 +335,8 @@ public class OpenIdConnectTest extends TestsBase {
         String execution2 = submitResponse.getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
         Response pollResponse = MobileId.pollForAuthentication(flow, execution2, 3000);
         Response oidcResponse = Requests.followLoginRedirects(flow, pollResponse.getHeader("location"));
-        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        JWTClaimsSet claims = SignedJWT.parse(token).getJWTClaimsSet();
+        Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        JWTClaimsSet claims = SignedJWT.parse(token.get("id_token")).getJWTClaimsSet();
 
         assertThat("There is no nonce in id token", claims.getStringClaim("nonce"), isEmptyOrNullString());
         assertThat(claims.getStringClaim("state"), equalTo(flow.getState()));
@@ -382,8 +385,8 @@ public class OpenIdConnectTest extends TestsBase {
         String execution2 = submitResponse.getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
         Response pollResponse = MobileId.pollForAuthentication(flow, execution2, 7000);
         Response oidcResponse = Requests.followLoginRedirects(flow, pollResponse.getHeader("location"));
-        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
+        Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token.get("id_token")).getJWTClaimsSet();
 
         assertThat(claims.getSubject(), equalTo("EE60001019906"));
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo("MARY ÄNN"));
@@ -652,8 +655,8 @@ public class OpenIdConnectTest extends TestsBase {
     @Feature("OIDC_SCOPE_EMAIL")
     public void emailScopeReturnsValues() throws Exception {
         Response oidcResponse = IdCard.authenticateWithIdCard(flow, "38001085718.pem", OIDC_OPENID_SCOPE + OIDC_EMAIL_SCOPE, "et");
-        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
+        Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token.get("id_token")).getJWTClaimsSet();
 
         assertThat(claims.getStringArrayClaim("amr")[0], equalTo(OIDC_AMR_IDC));
         assertThat(claims.getClaim("email"), equalTo("38001085718@eesti.ee"));
@@ -664,8 +667,8 @@ public class OpenIdConnectTest extends TestsBase {
     @Feature("OIDC_SCOPE_EMAIL")
     public void emailScopeReturnsValuesWithIdCardScope() throws Exception {
         Response oidcResponse = IdCard.authenticateWithIdCard(flow, "38001085718.pem", OIDC_OPENID_SCOPE + OIDC_EMAIL_SCOPE + OIDC_IDCARD_SCOPE, "et");
-        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
+        Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token.get("id_token")).getJWTClaimsSet();
 
         assertThat(claims.getStringArrayClaim("amr")[0], equalTo(OIDC_AMR_IDC));
         assertThat(claims.getClaim("email"), equalTo("38001085718@eesti.ee"));
@@ -676,8 +679,8 @@ public class OpenIdConnectTest extends TestsBase {
     @Feature("OIDC_SCOPE_EMAIL")
     public void emailScopeMissingEmailNotReturned() throws Exception {
         Response oidcResponse = IdCard.authenticateWithIdCard(flow, "38001085718.pem", OIDC_OPENID_SCOPE, "et");
-        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
+        Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token.get("id_token")).getJWTClaimsSet();
 
         assertThat(claims.getStringArrayClaim("amr")[0], equalTo(OIDC_AMR_IDC));
         assertThat(claims.getClaim("email"), is(nullValue()));
@@ -688,8 +691,8 @@ public class OpenIdConnectTest extends TestsBase {
     @Feature("OIDC_SCOPE_EMAIL")
     public void emailScopeNotSupportedAndShouldNotBeReturned() throws Exception {
         Response oidcResponse = MobileId.authenticateWithMobileId(flow, "00000766", "60001019906", 3000, OIDC_OPENID_SCOPE);
-        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
+        Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token.get("id_token")).getJWTClaimsSet();
 
         assertThat(claims.getStringArrayClaim("amr")[0], equalTo(OIDC_AMR_MID));
         assertThat(claims.getClaim("email"), is(nullValue()));
@@ -700,12 +703,111 @@ public class OpenIdConnectTest extends TestsBase {
     @Feature("OIDC_SCOPE_EMAIL")
     public void emailScopeNotSupportedButAskedShouldNotBeReturned() throws Exception {
         Response oidcResponse = SmartId.authenticateWithSmartId(flow, "10101010005", 3000, OIDC_OPENID_SCOPE + OIDC_EMAIL_SCOPE);
-        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token).getJWTClaimsSet();
+        Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token.get("id_token")).getJWTClaimsSet();
 
         assertThat(claims.getStringArrayClaim("amr")[0], equalTo(OIDC_AMR_SMARTID));
         assertThat(claims.getClaim("email"), is(nullValue()));
         assertThat(claims.getClaim("email_verified"), is(nullValue()));
+    }
+
+    @Test
+    @Feature("OIDC_USERINFO_ACCESSTOKEN_MISSING")
+    public void userInfoWithoutAccessToken() throws Exception {
+        Response userInfoResponse = Requests.getUserInfoWithAccessTokenAsBearerToken(flow, null, flow.getOpenIDProvider().getUserInfoUrl());
+        assertThat(userInfoResponse.getStatusCode(), is(400));
+        assertThat(userInfoResponse.getHeader("WWW-Authenticate"), is("Bearer error=\"invalid_request\",error_description=\"Missing access token from the request\""));
+    }
+
+    @Test
+    @Feature("OIDC_USERINFO_ACCESSTOKEN_EXPIRED")
+    public void userInfoWithInvalidAccessTokenInHeader() throws Exception {
+        Response userInfoResponse = Requests.getUserInfoWithAccessTokenAsBearerToken(flow, "AT-123456abcdefg", flow.getOpenIDProvider().getUserInfoUrl());
+        assertThat(userInfoResponse.getStatusCode(), is(401));
+        assertThat(userInfoResponse.getHeader("WWW-Authenticate"), is("Bearer error=\"invalid_token\",error_description=\"The access token has expired\""));
+    }
+
+    @Test
+    @Feature("OIDC_USERINFO_ACCESSTOKEN_EXPIRED")
+    public void userInfoWithInvalidAccessTokenAsParameter() throws Exception {
+        Response userInfoResponse = Requests.getUserInfoWithAccessTokenAsQueryParameter(flow, "AT-123456abcdefg", flow.getOpenIDProvider().getUserInfoUrl());
+        assertThat(userInfoResponse.getStatusCode(), is(401));
+        assertThat(userInfoResponse.getHeader("WWW-Authenticate"), is("Bearer error=\"invalid_token\",error_description=\"The access token has expired\""));
+    }
+
+    @Test
+    @Feature("OIDC_USERINFO_ENDPOINT")
+    public void userInfoHttpPostMethodNotAllowed() throws Exception {
+        Response userInfoResponse =
+
+        given()
+                .filter(flow.getCookieFilter())
+                .filter(new AllureRestAssuredFormParam())
+                .relaxedHTTPSValidation()
+        .when()
+                .queryParam("access_token", "AT-123456abcdefg")
+                .post(flow.getOpenIDProvider().getUserInfoUrl())
+        .then()
+                .extract().response();
+
+        assertThat(userInfoResponse.getStatusCode(), is(405));
+    }
+
+    @Test
+    @Feature("OIDC_USERINFO_ENDPOINT")
+    public void userInfoHttpDeleteMethodNotAllowed() throws Exception {
+
+        Response userInfoResponse =
+
+        given()
+                .filter(flow.getCookieFilter())
+                .filter(new AllureRestAssuredFormParam())
+                .relaxedHTTPSValidation()
+        .when()
+                .queryParam("access_token", "AT-123456abcdefg")
+                .delete(flow.getOpenIDProvider().getUserInfoUrl())
+        .then()
+                .extract().response();
+
+        assertThat(userInfoResponse.getStatusCode(), is(405));
+    }
+
+    @Test
+    @Feature("OIDC_USERINFO_ENDPOINT")
+    public void userInfoHttpPutMethodNotAllowed() throws Exception {
+
+        Response userInfoResponse =
+
+        given()
+                .filter(flow.getCookieFilter())
+                .filter(new AllureRestAssuredFormParam())
+                .relaxedHTTPSValidation()
+        .when()
+                .queryParam("access_token", "AT-123456abcdefg")
+                .put(flow.getOpenIDProvider().getUserInfoUrl())
+        .then()
+                .extract().response();
+
+        assertThat(userInfoResponse.getStatusCode(), is(405));
+    }
+
+    @Test
+    @Feature("OIDC_USERINFO_ENDPOINT")
+    public void userInfoHttpPatchMethodNotAllowed() throws Exception {
+
+        Response userInfoResponse =
+
+                given()
+                        .filter(flow.getCookieFilter())
+                        .filter(new AllureRestAssuredFormParam())
+                        .relaxedHTTPSValidation()
+                        .when()
+                        .queryParam("access_token", "AT-123456abcdefg")
+                        .put(flow.getOpenIDProvider().getUserInfoUrl())
+                        .then()
+                        .extract().response();
+
+        assertThat(userInfoResponse.getStatusCode(), is(405));
     }
 
     private Map<String, String> getQueryParams(String url) throws URISyntaxException {

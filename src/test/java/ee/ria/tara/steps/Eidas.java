@@ -12,6 +12,7 @@ import io.restassured.response.Response;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.text.ParseException;
+import java.util.Map;
 
 import static ee.ria.tara.config.TaraTestStrings.*;
 import static io.restassured.RestAssured.given;
@@ -19,7 +20,7 @@ import static io.restassured.RestAssured.given;
 public class Eidas {
 
     @Step("eIDAS authentication with scope {scope} and acr_values {acr}")
-    public static SignedJWT eIDASAuthenticationWithScopeAndAcr(OpenIdConnectFlow flow, String personCountry, String scope, Object acr) throws InterruptedException, IOException, URISyntaxException, ParseException, JOSEException {
+    public static Map<String, String> eIDASAuthenticationWithScopeAndAcr(OpenIdConnectFlow flow, String personCountry, String scope, Object acr) throws InterruptedException, IOException, URISyntaxException, ParseException, JOSEException {
 
         Response response = initiateEidasAuthentication(flow, personCountry, scope, acr);
         String relayState = response.htmlPath().getString("**.findAll { it.@name == 'RelayState' }[0].@value");
@@ -30,8 +31,7 @@ public class Eidas {
 
         String location = Eidas.returnEidasResponse(flow, samlResponse, relayState);
         Response oidcResponse = Requests.followLoginRedirects(flow, location);
-        String token = Requests.getIdToken(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
-        return Steps.verifyTokenAndReturnSignedJwtObject(flow, token);
+        return Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
     }
 
     @Step("Initiate eIDAS Authentication")

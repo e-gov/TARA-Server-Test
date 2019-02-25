@@ -40,6 +40,7 @@ class OpenIdConnectFlow {
         openIDProvider.setJwksUrl(properties.getTargetUrl() + properties.getJwksUrl());
         openIDProvider.setAuthorizeUrl(properties.getTargetUrl() + properties.getAuthorizeUrl());
         openIDProvider.setTokenUrl(properties.getTargetUrl() + properties.getTokenUrl());
+        openIDProvider.setUserInfoUrl(properties.getTargetUrl() + properties.getUserInfoUrl());
         openIDProvider.setLoginUrl(properties.getTargetUrl() + properties.getLoginUrl());
         openIDProvider.setBackendUrl(properties.getBackendUrl());
 

@@ -24,6 +24,7 @@ public class TestTaraProperties {
     private String clientSecret;
     private String authorizeUrl;
     private String tokenUrl;
+    private String userInfoUrl;
     private String loginUrl;
     private String serviceUrl;
     private String configurationUrl;
@@ -107,6 +108,14 @@ public class TestTaraProperties {
 
     public String getTokenUrl() {
         return tokenUrl;
+    }
+
+    public void setUserInfoUrl(String userInfoUrl) {
+        this.userInfoUrl = userInfoUrl;
+    }
+
+    public String getUserInfoUrl() {
+        return userInfoUrl;
     }
 
     public void setTokenUrl(String tokenUrl) {
