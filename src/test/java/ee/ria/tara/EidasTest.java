@@ -111,7 +111,7 @@ public class EidasTest extends TestsBase {
         Map<String, String> token = Eidas.eIDASAuthenticationWithScopeAndAcr(flow, DEF_COUNTRY, OIDC_DEF_SCOPE, "low");
         JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token.get("id_token")).getJWTClaimsSet();
 
-        ExpectedOutput expectedOutcome = new ExpectedOutput("EE30011092212", DEFATTR_FIRST, DEFATTR_FAMILY, DEFATTR_DATE, OIDC_AMR_EIDAS, OIDC_ACR_VALUES_SUBSTANTIAL);
+        ExpectedOutput expectedOutcome = new ExpectedOutput("EE30011092212", DEFATTR_FIRST, DEFATTR_FAMILY, DEFATTR_DATE, OIDC_AMR_EIDAS, OIDC_ACR_VALUES_LOW);
 
         assertThat(claims.getSubject(), equalTo(expectedOutcome.getSubject()));
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo(expectedOutcome.getFirstName()));
