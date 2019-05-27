@@ -293,6 +293,28 @@ public class OpenIdConnectTest extends TestsBase {
     }
 
     @Test
+    public void oidc2_stateAndNonceInAuthorizationCodeResponseShouldMatchExpectedUrlEncoded() throws Exception {
+        flow.setState("testȺ田\uD83D\uDE0D&additional=1 %20");
+        flow.setNonce("testȺ田\uD83D\uDE0D&additional=1 %20");
+        Response oidcResponse = MobileId.authenticateWithMobileId(flow, "00000766", "60001019906", 3000, OIDC_DEF_SCOPE);
+        Map<String, String> params = getQueryParams(oidcResponse.getHeader("location"));
+
+        assertThat(params.get("nonce"), equalTo(flow.getNonce()));
+        assertThat(params.get("state"), equalTo(flow.getState()));
+    }
+
+    @Test
+    public void oidc2_stateAndNonceInIdTokenResponseShouldMatchExpectedUrlEncoded() throws Exception {
+        flow.setState("testȺ田\uD83D\uDE0D&additional=1 %20");
+        flow.setNonce("testȺ田\uD83D\uDE0D&additional=1 %20");
+        Response oidcResponse = MobileId.authenticateWithMobileId(flow, "00000766", "60001019906", 3000, OIDC_DEF_SCOPE);
+        Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        JWTClaimsSet claims = SignedJWT.parse(token.get("id_token")).getJWTClaimsSet();
+        assertThat(claims.getStringClaim("nonce"), equalTo(flow.getNonce()));
+        assertThat(claims.getStringClaim("state"), equalTo(flow.getState()));
+    }
+
+    @Test
     public void oidc2_stateAndNonceInIdTokenResponseShouldMatchExpected() throws Exception {
         Response oidcResponse = MobileId.authenticateWithMobileId(flow, "00000766", "60001019906", 3000, OIDC_DEF_SCOPE);
         Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
@@ -452,6 +474,7 @@ public class OpenIdConnectTest extends TestsBase {
         Response response = Requests.getAuthenticationMethodsPageWithParameters(flow, queryParams);
         response.then().body("html.head.title", equalTo("National authentication service"));
     }
+
     @Test
     @Link(name = "Specification", url = "https://tools.ietf.org/html/rfc5646#section-2.1.1")
     public void oidc3_localesAreCaseInsensitiveRu() throws Exception {
@@ -602,7 +625,7 @@ public class OpenIdConnectTest extends TestsBase {
     @Test
     @Feature("OIDC_SCOPES_SUPPORTED")
     public void checkThatSmartIdIsNotAllowed() throws Exception {
-        String errorMessage = SmartId.extractError(SmartId.authenticateWithSmartIdError(flow, "10101010005" , OIDC_OPENID_SCOPE + OIDC_MID_SCOPE));
+        String errorMessage = SmartId.extractError(SmartId.authenticateWithSmartIdError(flow, "10101010005", OIDC_OPENID_SCOPE + OIDC_MID_SCOPE));
 
         assertThat(errorMessage, startsWith("Keelatud autentimismeetod!"));
     }
@@ -740,15 +763,15 @@ public class OpenIdConnectTest extends TestsBase {
     public void userInfoHttpPostMethodNotAllowed() throws Exception {
         Response userInfoResponse =
 
-        given()
-                .filter(flow.getCookieFilter())
-                .filter(new AllureRestAssuredFormParam())
-                .relaxedHTTPSValidation()
-        .when()
-                .queryParam("access_token", "AT-123456abcdefg")
-                .post(flow.getOpenIDProvider().getUserInfoUrl())
-        .then()
-                .extract().response();
+                given()
+                        .filter(flow.getCookieFilter())
+                        .filter(new AllureRestAssuredFormParam())
+                        .relaxedHTTPSValidation()
+                        .when()
+                        .queryParam("access_token", "AT-123456abcdefg")
+                        .post(flow.getOpenIDProvider().getUserInfoUrl())
+                        .then()
+                        .extract().response();
 
         assertThat(userInfoResponse.getStatusCode(), is(405));
     }
@@ -759,15 +782,15 @@ public class OpenIdConnectTest extends TestsBase {
 
         Response userInfoResponse =
 
-        given()
-                .filter(flow.getCookieFilter())
-                .filter(new AllureRestAssuredFormParam())
-                .relaxedHTTPSValidation()
-        .when()
-                .queryParam("access_token", "AT-123456abcdefg")
-                .delete(flow.getOpenIDProvider().getUserInfoUrl())
-        .then()
-                .extract().response();
+                given()
+                        .filter(flow.getCookieFilter())
+                        .filter(new AllureRestAssuredFormParam())
+                        .relaxedHTTPSValidation()
+                        .when()
+                        .queryParam("access_token", "AT-123456abcdefg")
+                        .delete(flow.getOpenIDProvider().getUserInfoUrl())
+                        .then()
+                        .extract().response();
 
         assertThat(userInfoResponse.getStatusCode(), is(405));
     }
@@ -778,15 +801,15 @@ public class OpenIdConnectTest extends TestsBase {
 
         Response userInfoResponse =
 
-        given()
-                .filter(flow.getCookieFilter())
-                .filter(new AllureRestAssuredFormParam())
-                .relaxedHTTPSValidation()
-        .when()
-                .queryParam("access_token", "AT-123456abcdefg")
-                .put(flow.getOpenIDProvider().getUserInfoUrl())
-        .then()
-                .extract().response();
+                given()
+                        .filter(flow.getCookieFilter())
+                        .filter(new AllureRestAssuredFormParam())
+                        .relaxedHTTPSValidation()
+                        .when()
+                        .queryParam("access_token", "AT-123456abcdefg")
+                        .put(flow.getOpenIDProvider().getUserInfoUrl())
+                        .then()
+                        .extract().response();
 
         assertThat(userInfoResponse.getStatusCode(), is(405));
     }
