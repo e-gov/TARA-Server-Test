@@ -13,7 +13,9 @@ import io.restassured.response.Response;
 import net.shibboleth.utilities.java.support.resolver.CriteriaSet;
 import net.shibboleth.utilities.java.support.resolver.Criterion;
 import net.shibboleth.utilities.java.support.resolver.ResolverException;
+import org.junit.Rule;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.Timeout;
 import org.junit.runner.RunWith;
 import org.opensaml.core.criterion.EntityIdCriterion;
 import org.opensaml.saml.common.SignableSAMLObject;
@@ -50,6 +52,8 @@ import static io.restassured.config.EncoderConfig.encoderConfig;
 @ContextConfiguration(classes = TestConfiguration.class)
 @ActiveProfiles(profiles = {"dev"}, resolver = SystemPropertyActiveProfileResolver.class)
 public abstract class TestsBase {
+    @Rule
+    public Timeout globalTimeout = Timeout.seconds(5 * 60); // 5 minutes max per method tested
 
     @Autowired
     protected TestTaraProperties testTaraProperties;
