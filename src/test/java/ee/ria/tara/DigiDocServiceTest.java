@@ -16,6 +16,7 @@ import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,9 +36,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 
-@SpringBootTest(classes = MobileIdTest.class)
+@SpringBootTest(classes = DigiDocServiceTest.class)
 @Category(IntegrationTest.class)
-public class MobileIdTest extends TestsBase {
+@Ignore
+public class DigiDocServiceTest extends TestsBase {
     @Autowired
     private ResourceLoader resourceLoader;
     private static boolean setupComplete = false;
@@ -76,31 +78,27 @@ public class MobileIdTest extends TestsBase {
 
         assertValidUserinfoResponse(token);
     }
-    @Test
-    public void mob1_mobileIdAuthenticationSuccessPNOEEPrefixWithRealLifeDelay() throws Exception {
-        Response oidcResponse = MobileId.authenticateWithMobileId(flow, "00000566", "60001018800", 7000, OIDC_DEF_SCOPE);
-        Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
 
-        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token.get("id_token")).getJWTClaimsSet();
-
-        assertThat(claims.getSubject(), equalTo("EE60001018800"));
-        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo("MARY ÄNN"));
-        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("O’CONNEŽ-ŠUSLIK TESTNUMBER"));
-        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("2000-01-01"));
-        assertThat(claims.getJSONObjectClaim("profile_attributes").keySet(), not(hasItem("mobile_number")));
-        assertThat(claims.getStringArrayClaim("amr")[0], equalTo(OIDC_AMR_MID));
-    }
     @Test
     public void mob1_mobileIdAuthenticationSuccessWithSpecificSope() throws Exception {
         Response oidcResponse = MobileId.authenticateWithMobileId(flow, "00000766", "60001019906", 3000, OIDC_OPENID_SCOPE + OIDC_MID_SCOPE);
         Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
 
+        assertValidIdToken(token);
+
+        assertValidUserinfoResponse(token);
     }
 
     @Test
-    public void mob2_mobileIdAuthenticationUserCertificatesRevoked() throws Exception {
-        String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdPollError(flow, "00000266", "60001019939", 1000));
-        assertThat(errorMessage, startsWith("Kasutajal pole Mobiil-ID lepingut."));
+    public void mob2_mobileIdAuthenticationMidNotActivated() {
+        String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdError(flow, "00000366", "60001019928", OIDC_DEF_SCOPE));
+        assertThat(errorMessage, startsWith("Kasutaja Mobiil-ID ei ole aktiveeritud."));
+    }
+
+    @Test
+    public void mob2_mobileIdAuthenticationUserCertificatesRevoked() {
+        String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdError(flow, "00000266", "60001019939", OIDC_DEF_SCOPE));
+        assertThat(errorMessage, startsWith("Teie Mobiil-ID sertifikaadid on peatatud või tühistatud."));
     }
 
     @Test
@@ -137,8 +135,8 @@ public class MobileIdTest extends TestsBase {
      * Verifying that user receives proper error message when user inserts invalid id code
      */
     @Test
-    public void mob3_mobileIdAuthenticationInvalidIdCode() throws Exception {
-        String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdPollError(flow, "00000766", "10001010002", 1000));
+    public void mob3_mobileIdAuthenticationInvalidIdCode() {
+        String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdError(flow, "00000766", "10001010002", OIDC_DEF_SCOPE));
         assertThat(errorMessage, startsWith("Kasutajal pole Mobiil-ID lepingut"));
     }
 
@@ -146,8 +144,8 @@ public class MobileIdTest extends TestsBase {
      * Verifying that user receives proper error message when user inserts invalid phone number
      */
     @Test
-    public void mob3_mobileIdAuthenticationInvalidPhoneNumber() throws Exception{
-        String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdPollError(flow, "123456789123", "60001019906", 1000));
+    public void mob3_mobileIdAuthenticationInvalidPhoneNumber() {
+        String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdError(flow, "123456789123", "60001019906", OIDC_DEF_SCOPE));
         assertThat(errorMessage, startsWith("Kasutajal pole Mobiil-ID lepingut."));
     }
 
