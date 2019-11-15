@@ -445,7 +445,7 @@ public class OpenIdConnectTest extends TestsBase {
         queryParams.remove("ui_locales");
         queryParams.put("ui_locales", "fi");
         Response response = Requests.getAuthenticationMethodsPageWithParameters(flow, queryParams);
-        response.then().body("html.head.title", equalTo("Riigi autentimisteenus"));
+        response.then().body("html.head.title", equalTo("Riigi autentimisteenus - Turvaline autentimine asutuste e-teenustes"));
     }
 
     @Test
