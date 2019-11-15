@@ -12,6 +12,7 @@ import ee.ria.tara.steps.Eidas;
 import ee.ria.tara.steps.Requests;
 import ee.ria.tara.steps.Steps;
 import ee.ria.tara.utils.EidasResponseDataUtils;
+import io.qameta.allure.Feature;
 import ee.ria.tara.utils.OpenIdConnectUtils;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
@@ -122,7 +123,29 @@ public class EidasTest extends TestsBase {
         assertValidUserinfoResponse(expectedOutcome, token.get("access_token"));
     }
 
+    @Test
+    @Feature("OIDC_SCOPES_EIDASONLY_WITH_COUNTRY")
+    public void eidas1_eidasOnlyAuthenticationCountryEESuccess() throws URISyntaxException, ParseException, JOSEException, IOException, InterruptedException {
+        Response response = Eidas.initiateEidasOnlyWithCountryAuthentication(flow,"openid eidasonly eidas:country:ee", null);
+        String relayState = response.htmlPath().getString("**.findAll { it.@name == 'RelayState' }[0].@value");
 
+        //Here we need to simulate a response from foreign country eIDAS Node
+        String samlResponse = EidasResponseDataUtils.getBase64SamlResponseDefaultMaximalAttributes(flow, response.getBody().asString());
+        String location = Eidas.returnEidasResponse(flow, samlResponse, relayState);
+        Response oidcResponse = Requests.followLoginRedirects(flow, location);
+        Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token.get("id_token")).getJWTClaimsSet();
+
+        ExpectedOutput expectedOutcome = new ExpectedOutput("EE30011092212", DEFATTR_FIRST, DEFATTR_FAMILY, DEFATTR_DATE, OIDC_AMR_EIDAS, OIDC_ACR_VALUES_SUBSTANTIAL);
+
+        assertThat(claims.getSubject(), equalTo(expectedOutcome.getSubject()));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo(expectedOutcome.getFirstName()));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo(expectedOutcome.getFamilyName()));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo(expectedOutcome.getDateOfBirth()));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo(expectedOutcome.getAmr()));
+
+        assertValidUserinfoResponse(expectedOutcome, token.get("access_token"));
+    }
 
     @Test
     public void eidas1_eidasAuthenticationMaxAttrSuccess() throws Exception {

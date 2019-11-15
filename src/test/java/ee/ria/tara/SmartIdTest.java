@@ -11,7 +11,7 @@ import ee.ria.tara.model.OpenIdConnectFlow;
 import ee.ria.tara.steps.Requests;
 import ee.ria.tara.steps.SmartId;
 import ee.ria.tara.steps.Steps;
-import ee.ria.tara.utils.Feature;
+import io.qameta.allure.Feature;
 import ee.ria.tara.utils.OpenIdConnectUtils;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;

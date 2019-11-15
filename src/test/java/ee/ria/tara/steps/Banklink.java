@@ -56,7 +56,7 @@ public class Banklink {
     @Step("Banklink callback POST")
     public static String banklinkCallbackPOST(OpenIdConnectFlow flow, Map bankResponseParams) {
         return given().filter(flow.getCookieFilter())
-                .filter(new AllureRestAssuredCorrectHeaders()).relaxedHTTPSValidation().formParams(bankResponseParams)
+                .filter(new AllureRestAssuredFormParam()).relaxedHTTPSValidation().formParams(bankResponseParams)
                 .post(flow.getOpenIDProvider().getLoginUrl()).then().extract().response()
                 .getHeader("location");
     }

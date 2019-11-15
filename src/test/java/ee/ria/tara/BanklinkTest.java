@@ -12,7 +12,7 @@ import ee.ria.tara.steps.Banklink;
 import ee.ria.tara.steps.BanklinkMock;
 import ee.ria.tara.steps.Requests;
 import ee.ria.tara.steps.Steps;
-import ee.ria.tara.utils.Feature;
+import io.qameta.allure.Feature;
 import ee.ria.tara.utils.OpenIdConnectUtils;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;

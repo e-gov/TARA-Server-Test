@@ -230,6 +230,18 @@ public class Requests {
         return Requests.followRedirect(flow, location);
     }
 
+    @Step("{flow.endUser}Get metadata")
+    public static Response getMetadata(OpenIdConnectFlow flow) {
+        return given()
+                .filter(flow.getCookieFilter())
+                .filter(new AllureRestAssuredCorrectHeaders())
+                .relaxedHTTPSValidation()
+                .redirects().follow(false)
+                .when()
+                .urlEncodingEnabled(false)
+                .get(flow.getOpenIDProvider().getMetadataUrl());
+    }
+
     public static Map<String, String> getTokenResponse(OpenIdConnectFlow flow, String authorizationCode) {
         Response response = Requests.postToTokenEndpoint(flow, authorizationCode);
         return response.jsonPath().getMap("$.");

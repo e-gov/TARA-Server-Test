@@ -42,9 +42,37 @@ public class Eidas {
         return getEidasSamlRequest(flow, personCountry, execution);
     }
 
+    @Step("Initiate eIDAS Authentication")
+    public static Response initiateEidasOnlyWithCountryAuthentication(OpenIdConnectFlow flow, String scope, Object acr) throws InterruptedException, IOException, URISyntaxException {
+        Response taraEidasSubmitPage = Requests.getAuthenticationMethodsPageWithScopeAndAcr(flow, scope, acr);
+
+
+        return getEidasSamlRequestWithoutSubmit(flow, taraEidasSubmitPage);
+    }
+
     @Step("Get eIDAS SAML Request")
     public static Response getEidasSamlRequest(OpenIdConnectFlow flow, String personCountry, String execution) {
         Response response = submitEidasLogin(flow, personCountry, execution);
+
+        String samlRequest = response.htmlPath().getString("**.findAll { it.@name == 'SAMLRequest' }[0].@value");
+        String relayState = response.htmlPath().getString("**.findAll { it.@name == 'RelayState' }[0].@value");
+        String country = response.htmlPath().getString("**.findAll { it.@name == 'country' }[0].@value");
+        String url = response.htmlPath().getString("**.findAll { it.@method == 'post' }[0].@action");
+
+        return given()
+                .filter(flow.getCookieFilter())
+                .filter(new AllureRestAssuredFormParam()).relaxedHTTPSValidation()
+                .formParam("country", country)
+                .formParam("RelayState", relayState)
+                .formParam("SAMLRequest", samlRequest)
+                .when()
+                .post(url)
+                .then()
+                .extract().response();
+    }
+
+    @Step("Get eIDAS SAML Request")
+    public static Response getEidasSamlRequestWithoutSubmit(OpenIdConnectFlow flow, Response response) {
 
         String samlRequest = response.htmlPath().getString("**.findAll { it.@name == 'SAMLRequest' }[0].@value");
         String relayState = response.htmlPath().getString("**.findAll { it.@name == 'RelayState' }[0].@value");

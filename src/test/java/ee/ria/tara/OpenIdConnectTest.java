@@ -14,6 +14,7 @@ import ee.ria.tara.utils.OpenIdConnectUtils;
 import io.qameta.allure.Feature;
 import io.qameta.allure.Issue;
 import io.qameta.allure.Link;
+import io.qameta.allure.Step;
 import io.restassured.config.RestAssuredConfig;
 import io.restassured.config.SSLConfig;
 import io.restassured.response.Response;
@@ -425,7 +426,7 @@ public class OpenIdConnectTest extends TestsBase {
         queryParams.remove("ui_locales");
         queryParams.put("ui_locales", "ru");
         Response response = Requests.getAuthenticationMethodsPageWithParameters(flow, queryParams);
-        response.then().body("html.head.title", equalTo("Национальный сервис аутентификации"));
+        response.then().body("html.head.title", equalTo("Национальный сервис аутентификации - Для безопасной аутентификации в э-услугах"));
     }
 
     @Test
@@ -434,7 +435,7 @@ public class OpenIdConnectTest extends TestsBase {
         queryParams.remove("ui_locales");
         queryParams.put("ui_locales", "en");
         Response response = Requests.getAuthenticationMethodsPageWithParameters(flow, queryParams);
-        response.then().body("html.head.title", equalTo("National authentication service"));
+        response.then().body("html.head.title", equalTo("National authentication service - Secure authentication for e-services"));
     }
 
     @Test
@@ -453,7 +454,7 @@ public class OpenIdConnectTest extends TestsBase {
         queryParams.remove("ui_locales");
         queryParams.put("locale", "en");
         Response response = Requests.getAuthenticationMethodsPageWithParameters(flow, queryParams);
-        response.then().body("html.head.title", equalTo("National authentication service"));
+        response.then().body("html.head.title", equalTo("National authentication service - Secure authentication for e-services"));
     }
 
     @Test
@@ -462,7 +463,7 @@ public class OpenIdConnectTest extends TestsBase {
         queryParams.remove("ui_locales");
         queryParams.put("locale", "ru");
         Response response = Requests.getAuthenticationMethodsPageWithParameters(flow, queryParams);
-        response.then().body("html.head.title", equalTo("Национальный сервис аутентификации"));
+        response.then().body("html.head.title", equalTo("Национальный сервис аутентификации - Для безопасной аутентификации в э-услугах"));
     }
 
     @Test
@@ -472,7 +473,7 @@ public class OpenIdConnectTest extends TestsBase {
         queryParams.remove("ui_locales");
         queryParams.put("ui_locales", "EN");
         Response response = Requests.getAuthenticationMethodsPageWithParameters(flow, queryParams);
-        response.then().body("html.head.title", equalTo("National authentication service"));
+        response.then().body("html.head.title", equalTo("National authentication service - Secure authentication for e-services"));
     }
 
     @Test
@@ -482,7 +483,7 @@ public class OpenIdConnectTest extends TestsBase {
         queryParams.remove("ui_locales");
         queryParams.put("ui_locales", "RU");
         Response response = Requests.getAuthenticationMethodsPageWithParameters(flow, queryParams);
-        response.then().body("html.head.title", equalTo("Национальный сервис аутентификации"));
+        response.then().body("html.head.title", equalTo("Национальный сервис аутентификации - Для безопасной аутентификации в э-услугах"));
     }
 
     @Test
@@ -491,7 +492,7 @@ public class OpenIdConnectTest extends TestsBase {
         queryParams.remove("ui_locales");
         queryParams.put("ui_locales", "fi en et");
         Response response = Requests.getAuthenticationMethodsPageWithParameters(flow, queryParams);
-        response.then().body("html.head.title", equalTo("National authentication service"));
+        response.then().body("html.head.title", equalTo("National authentication service - Secure authentication for e-services"));
     }
 
     @Test
@@ -819,7 +820,6 @@ public class OpenIdConnectTest extends TestsBase {
     public void userInfoHttpPatchMethodNotAllowed() throws Exception {
 
         Response userInfoResponse =
-
                 given()
                         .filter(flow.getCookieFilter())
                         .filter(new AllureRestAssuredFormParam())
@@ -831,6 +831,40 @@ public class OpenIdConnectTest extends TestsBase {
                         .extract().response();
 
         assertThat(userInfoResponse.getStatusCode(), is(405));
+    }
+
+    @Test
+    public void metadataScopesSupportedHasListOfEidasCountries() throws Exception {
+        Response metadata = Requests.getMetadata(flow);
+        metadata.then().statusCode(200).body(
+                "scopes_supported", hasItems("eidas:country:at",
+                        "eidas:country:ee",
+                        "eidas:country:sk")
+        );
+    }
+
+    @Test
+    public void metadataScopesSupprtedHasListOfAuthenticationMethods() throws Exception {
+        Response metadata = Requests.getMetadata(flow);
+        metadata.then().statusCode(200).body(
+                "scopes_supported", hasItems(
+                        "idcard",
+                        "mid",
+                        "banklink",
+                        "smartid",
+                        "eidas",
+                        "eidasonly")
+        );
+    }
+
+    @Test
+    public void metadataScopesSupprtedHasOpenidAndEmail() throws Exception {
+        Response metadata = Requests.getMetadata(flow);
+        metadata.then().statusCode(200).body(
+                "scopes_supported", hasItems(
+                        "openid",
+                        "email")
+        );
     }
 
     private Map<String, String> getQueryParams(String url) throws URISyntaxException {

@@ -43,6 +43,7 @@ class OpenIdConnectFlow {
         openIDProvider.setUserInfoUrl(properties.getTargetUrl() + properties.getUserInfoUrl());
         openIDProvider.setLoginUrl(properties.getTargetUrl() + properties.getLoginUrl());
         openIDProvider.setBackendUrl(properties.getBackendUrl());
+        openIDProvider.setMetadataUrl(properties.getTargetUrl() + properties.getConfigurationUrl());
 
     }
 

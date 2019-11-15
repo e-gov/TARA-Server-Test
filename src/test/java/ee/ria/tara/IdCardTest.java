@@ -96,6 +96,7 @@ public class IdCardTest extends TestsBase {
     @Test
     @Feature("ID-1")
     public void validLoginWithEsteid2018Certificate() throws Exception {
+        flow.setState("FcwXIhR5JkHqUqTVZoclTy7QYoQMN9jjXGbp77MnjnSQu8w4Sm9Jw3HuDaimwGNrtdIAT0Pal_XEt3_NWnBPF-gwUTZa5MdDg163JQkJplVtDsyhmMQvLZilCdq_BMKztc7iSptcfGkguba-oBtJaiySnSAvKqvytck0AaNwUyWc2QNBk34kAUIh-CHQS49OYRlRmiYz3AJnxxd6");
         Response oidcResponse = IdCard.authenticateWithIdCard(flow, "38001085718.pem", OIDC_OPENID_SCOPE + OIDC_EMAIL_SCOPE, "et");
         Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
         JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token.get("id_token")).getJWTClaimsSet();
@@ -170,6 +171,12 @@ public class IdCardTest extends TestsBase {
         assertThat(claims.getClaim("email_verified"), equalTo(expectedOutcome.isEmailVerified()));
 
         assertValidUserInfoResponseWithEmail(expectedOutcome, token.get("access_token"));
+    }
+
+    @Test
+    public void expired2011RsaCertificate() throws Exception {
+        String errorMessage = IdCard.extractError(IdCard.authenticateWithIdAndReceiveError(flow, "47101010033_2011.pem", OIDC_DEF_SCOPE, "et"));
+        assertThat(errorMessage, startsWith("Teie sertifikaadid ei kehti."));
     }
 
     @Test
