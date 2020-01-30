@@ -73,7 +73,7 @@ public class SmartIdTest extends TestsBase {
     @Test
     @Feature("TSID-12, TSID-13")
     public void smartidSuccess() throws Exception {
-        Response oidcResponse = SmartId.authenticateWithSmartId(flow, "10101010005", 2000, OIDC_DEF_SCOPE);
+        Response oidcResponse = SmartId.authenticateWithSmartId(flow, "10101010005", 3000, OIDC_DEF_SCOPE);
         Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
 
         assertValidIdToken(token);
@@ -84,7 +84,7 @@ public class SmartIdTest extends TestsBase {
     @Test
     @Feature("TSID-12, TSID-13")
     public void smartidSuccessWithSpecificScope() throws Exception {
-        Response oidcResponse = SmartId.authenticateWithSmartId(flow, "10101010005", 2000, OIDC_OPENID_SCOPE + OIDC_SMARTID_SCOPE);
+        Response oidcResponse = SmartId.authenticateWithSmartId(flow, "10101010005", 3000, OIDC_OPENID_SCOPE + OIDC_SMARTID_SCOPE);
         Map<String, String> token =  Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
         assertValidIdToken(token);
 
@@ -94,7 +94,7 @@ public class SmartIdTest extends TestsBase {
     @Test
     @Feature("TSID-11")
     public void smartid_UserRefuses() throws Exception {
-        String errorMessage = SmartId.extractError(SmartId.authenticatePollError(flow, "10101010016", 2000));
+        String errorMessage = SmartId.extractError(SmartId.authenticatePollError(flow, "10101010016", 3000));
         assertThat(errorMessage, equalTo("Autentimine katkestati kasutaja poolt."));
     }
 
