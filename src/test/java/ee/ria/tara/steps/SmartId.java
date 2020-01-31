@@ -78,6 +78,24 @@ public class SmartId {
         throw new RuntimeException("No Smart-ID response in: " + (intervalMillis * 3 + 200) + " millis");
     }
 
+    @Step("Cancel Smart-ID authentication")
+    public static Response cancelAuthentication(OpenIdConnectFlow flow, String execution) throws InterruptedException {
+        Response response = given()
+                .filter(flow.getCookieFilter())
+                .filter(new AllureRestAssuredFormParam())
+                .relaxedHTTPSValidation()
+                .redirects().follow(false)
+                .formParam("execution", execution)
+                .formParam("_eventId", "cancel")
+                .queryParam("client_id", flow.getRelyingParty().getClientId())
+                .queryParam("redirect_uri", flow.getRelyingParty().getRedirectUri())
+                .when()
+                .post(flow.getOpenIDProvider().getLoginUrl())
+                .then()
+                .extract().response();
+        return response;
+    }
+
     @Step("{flow.endUser}Authenticates with Smart-ID and poll for errors")
     public static Response authenticatePollError(OpenIdConnectFlow flow, String idCode, Integer pollMillis) throws InterruptedException {
         Map<String, String> formParams = new HashMap<String, String>();

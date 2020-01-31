@@ -78,6 +78,26 @@ public class MobileId {
         throw new RuntimeException("No MID response in: " + (intervalMillis * 4 + 200) + " millis");
     }
 
+    @Step("Cancel Mobile-ID authentication")
+    public static Response cancelAuthentication(OpenIdConnectFlow flow, String execution) throws InterruptedException {
+
+        Response response = given()
+                .filter(flow.getCookieFilter())
+                .filter(new AllureRestAssuredFormParam())
+                .relaxedHTTPSValidation()
+                .redirects().follow(false)
+                .formParam("execution", execution)
+                .formParam("_eventId", "cancel")
+                .queryParam("client_id", flow.getRelyingParty().getClientId())
+                .queryParam("redirect_uri", flow.getRelyingParty().getRedirectUri())
+                .when()
+                .post(flow.getOpenIDProvider().getLoginUrl())
+                .then()
+                .extract().response();
+        return response;
+    }
+
+
     @Step("{flow.endUser}Authenticates with Mobile-ID and poll for errors")
     public static Response authenticateWithMobileIdPollError(OpenIdConnectFlow flow, String mobileNo, String idCode, Integer pollMillis) throws InterruptedException {
         Map<String, String> formParams = new HashMap<String, String>();

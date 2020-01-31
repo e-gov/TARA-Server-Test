@@ -77,6 +77,31 @@ public class MobileIdTest extends TestsBase {
         assertValidUserinfoResponse(token);
     }
     @Test
+    public void mob1_mobileIdCancelAndRetrySuccessful() throws Exception {
+        Map queryParams = OpenIdConnectUtils.getAuthorizationRequestData(flow);
+
+        Response authenticationResponse = Requests.openIdConnectAuthenticationRequest(flow, queryParams);
+        String location = authenticationResponse.then().extract().response()
+                .getHeader("location");
+        Response taraLoginPageResponse = Requests.followRedirect(flow, location);
+        String execution = taraLoginPageResponse.getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
+        Response submitResponse = MobileId.submitMobileIdLogin(flow, "00000766", "60001019906", execution, location);
+        String execution2 = submitResponse.getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
+        Response cancelResponse = MobileId.cancelAuthentication(flow, execution2);
+
+
+        String execution3 = cancelResponse.getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
+        Response submitResponse2 = MobileId.submitMobileIdLogin(flow, "00000766", "60001019906", execution3, location);
+        String execution4 = submitResponse2.getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
+        Response pollResponse = MobileId.pollForAuthentication(flow, execution4, 7000);
+        Response oidcResponse = Requests.followLoginRedirects(flow, pollResponse.getHeader("location"));
+        Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+
+        assertValidIdToken(token);
+
+        assertValidUserinfoResponse(token);
+    }
+    @Test
     public void mob1_mobileIdAuthenticationSuccessPNOEEPrefixWithRealLifeDelay() throws Exception {
         Response oidcResponse = MobileId.authenticateWithMobileId(flow, "00000566", "60001018800", 7000, OIDC_DEF_SCOPE);
         Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));

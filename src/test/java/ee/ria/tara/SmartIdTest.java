@@ -82,6 +82,32 @@ public class SmartIdTest extends TestsBase {
     }
 
     @Test
+    public void smartIdCancelAndRetrySuccessful() throws Exception {
+        Map queryParams = OpenIdConnectUtils.getAuthorizationRequestData(flow);
+
+        Response authenticationResponse = Requests.openIdConnectAuthenticationRequest(flow, queryParams);
+        String location = authenticationResponse.then().extract().response()
+                .getHeader("location");
+        Response taraLoginPageResponse = Requests.followRedirect(flow, location);
+        String execution = taraLoginPageResponse.getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
+        Response submitResponse = SmartId.submitSmartIdLogin(flow, "10101010005", execution, location);
+        String execution2 = submitResponse.getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
+        Response cancelResponse = SmartId.cancelAuthentication(flow, execution2);
+
+
+        String execution3 = cancelResponse.getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
+        Response submitResponse2 = SmartId.submitSmartIdLogin(flow,"10101010005", execution3, location);
+        String execution4 = submitResponse2.getBody().htmlPath().getString("**.findAll { it.@name == 'execution' }[0].@value");
+        Response pollResponse = SmartId.pollForAuthentication(flow, execution4, 7000);
+        Response oidcResponse = Requests.followLoginRedirects(flow, pollResponse.getHeader("location"));
+        Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+
+        assertValidIdToken(token);
+
+        assertValidUserInfoResponse(token);
+    }
+
+    @Test
     @Feature("TSID-12, TSID-13")
     public void smartidSuccessWithSpecificScope() throws Exception {
         Response oidcResponse = SmartId.authenticateWithSmartId(flow, "10101010005", 3000, OIDC_OPENID_SCOPE + OIDC_SMARTID_SCOPE);
