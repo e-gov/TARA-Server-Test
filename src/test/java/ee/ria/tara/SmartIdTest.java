@@ -180,6 +180,8 @@ public class SmartIdTest extends TestsBase {
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("SMART-ID"));
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("1801-01-01"));
         assertThat(claims.getStringArrayClaim("amr")[0], equalTo("smartid"));
+        assertThat(claims.getClaim("acr"), equalTo("substantial"));
+
     }
 
     private void assertValidUserinfoResponse(Response userInfoResponse) {
@@ -191,5 +193,7 @@ public class SmartIdTest extends TestsBase {
         assertThat(json.get("family_name"), equalTo("SMART-ID"));
         assertThat(json.get("date_of_birth"), equalTo("1801-01-01"));
         assertThat(json.getList("amr"), equalTo(Arrays.asList(OIDC_AMR_SMARTID)));
+        assertThat(json.get("acr"), equalTo("substantial"));
+
     }
 }

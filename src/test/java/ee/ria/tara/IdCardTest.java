@@ -62,6 +62,7 @@ public class IdCardTest extends TestsBase {
         private String amr;
         private String email;
         private boolean emailVerified;
+        private String acr;
     }
 
     @Before
@@ -101,7 +102,7 @@ public class IdCardTest extends TestsBase {
         Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
         JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token.get("id_token")).getJWTClaimsSet();
 
-        IdCardTest.ExpectedOutput expectedOutcome = new IdCardTest.ExpectedOutput("EE38001085718", "JAAK-KRISTJAN", "JÕEORG", "1980-01-08", OIDC_AMR_IDC, "38001085718@eesti.ee", false);
+        IdCardTest.ExpectedOutput expectedOutcome = new IdCardTest.ExpectedOutput("EE38001085718", "JAAK-KRISTJAN", "JÕEORG", "1980-01-08", OIDC_AMR_IDC, "38001085718@eesti.ee", false, "high");
 
         assertThat(claims.getSubject(), equalTo(expectedOutcome.getSubject()));
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo(expectedOutcome.getFirstName()));
@@ -122,7 +123,7 @@ public class IdCardTest extends TestsBase {
         Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
         JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token.get("id_token")).getJWTClaimsSet();
 
-        IdCardTest.ExpectedOutput expectedOutcome = new IdCardTest.ExpectedOutput("EE38001085718", "JAAK-KRISTJAN", "JÕEORG", "1980-01-08", OIDC_AMR_IDC, "38001085718@eesti.ee", false);
+        IdCardTest.ExpectedOutput expectedOutcome = new IdCardTest.ExpectedOutput("EE38001085718", "JAAK-KRISTJAN", "JÕEORG", "1980-01-08", OIDC_AMR_IDC, "38001085718@eesti.ee", false, "high");
 
         assertThat(claims.getSubject(), equalTo(expectedOutcome.getSubject()));
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo(expectedOutcome.getFirstName()));
@@ -140,7 +141,7 @@ public class IdCardTest extends TestsBase {
         Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
         JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token.get("id_token")).getJWTClaimsSet();
 
-        IdCardTest.ExpectedOutput expectedOutcome = new IdCardTest.ExpectedOutput("EE37101010021", "IGOR", "ŽAIKOVSKI", "1971-01-01", OIDC_AMR_IDC, "igor.zaikovski.3@eesti.ee", false);
+        IdCardTest.ExpectedOutput expectedOutcome = new IdCardTest.ExpectedOutput("EE37101010021", "IGOR", "ŽAIKOVSKI", "1971-01-01", OIDC_AMR_IDC, "igor.zaikovski.3@eesti.ee", false, "high");
 
         assertThat(claims.getSubject(), equalTo(expectedOutcome.getSubject()));
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo(expectedOutcome.getFirstName()));
@@ -160,7 +161,7 @@ public class IdCardTest extends TestsBase {
         Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
         JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token.get("id_token")).getJWTClaimsSet();
 
-        IdCardTest.ExpectedOutput expectedOutcome = new IdCardTest.ExpectedOutput("EE47101010033", "MARI-LIIS", "MÄNNIK", "1971-01-01", OIDC_AMR_IDC, "mari-liis.mannik@eesti.ee", false);
+        IdCardTest.ExpectedOutput expectedOutcome = new IdCardTest.ExpectedOutput("EE47101010033", "MARI-LIIS", "MÄNNIK", "1971-01-01", OIDC_AMR_IDC, "mari-liis.mannik@eesti.ee", false, "high");
 
         assertThat(claims.getSubject(), equalTo(expectedOutcome.getSubject()));
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo(expectedOutcome.getFirstName()));
@@ -290,6 +291,7 @@ public class IdCardTest extends TestsBase {
         assertThat(json.get("email_verified"), equalTo(expectedOutcome.isEmailVerified()));
         assertThat(json.get("email"), equalTo(expectedOutcome.getEmail()));
         assertThat(json.getList("amr"), equalTo(Arrays.asList(expectedOutcome.getAmr())));
+        assertThat(json.get("acr"), equalTo(expectedOutcome.getAcr()));
     }
 
     private void assertValidUserinfoResponseWithoutEmail(ExpectedOutput expectedOutcome, Response userInfoResponse) throws Exception {
@@ -301,6 +303,8 @@ public class IdCardTest extends TestsBase {
         assertThat(json.get("family_name"), equalTo(expectedOutcome.getFamilyName()));
         assertThat(json.get("date_of_birth"), equalTo(expectedOutcome.getDateOfBirth()));
         assertThat(json.getList("amr"), equalTo(Arrays.asList(expectedOutcome.getAmr())));
+        assertThat(json.get("acr"), equalTo(expectedOutcome.getAcr()));
+
     }
 
 }

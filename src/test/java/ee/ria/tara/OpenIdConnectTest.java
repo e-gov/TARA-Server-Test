@@ -24,6 +24,7 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.opensaml.core.config.InitializationException;
@@ -417,7 +418,7 @@ public class OpenIdConnectTest extends TestsBase {
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("2000-01-01"));
         assertThat(claims.getJSONObjectClaim("profile_attributes").keySet(), not(hasItem("mobile_number")));
         assertThat(claims.getStringArrayClaim("amr")[0], equalTo(OIDC_AMR_MID));
-        assertThat("acr value should not be present for MID", claims.getClaim("acr"), equalTo(null));
+        assertThat(claims.getClaim("acr"), equalTo("high"));
     }
 
     @Test
@@ -497,13 +498,13 @@ public class OpenIdConnectTest extends TestsBase {
 
     @Test
     @Feature("OIDC_SCOPES_SUPPORTED")
-    public void allAuthenticationMethodsShouldBePresentWithDefaultScope() throws Exception {
+    public void allDefaultAuthenticationMethodsShouldBePresentWithDefaultScope() throws Exception {
         Response response = Requests.getAuthenticationMethodsPageWithScope(flow, OIDC_OPENID_SCOPE);
 
         assertThat("eIDAS must be present", isEidasPresent(response));
         assertThat("MID must be present", isMidPresent(response));
         assertThat("ID-Card must be present", isIdCardPresent(response));
-        assertThat("Bank must be present", isBankPresent(response));
+        assertThat("Bank must not be present", isBankPresent(response), is(false));
         assertThat("Smart-ID must be present", isSmartIdPresent(response));
     }
 
@@ -527,7 +528,7 @@ public class OpenIdConnectTest extends TestsBase {
         assertThat("eIDAS must be present", isEidasPresent(response));
         assertThat("MID must be present", isMidPresent(response));
         assertThat("ID-Card must be present", isIdCardPresent(response));
-        assertThat("Bank must be present", isBankPresent(response));
+        assertThat("Bank must not be present", isBankPresent(response), is(false));
         assertThat("Smart-ID must be present", isSmartIdPresent(response));
     }
 
@@ -575,7 +576,7 @@ public class OpenIdConnectTest extends TestsBase {
         assertThat("eIDAS must be present", isEidasPresent(response));
         assertThat("MID must be present", isMidPresent(response));
         assertThat("ID-Card must be present", isIdCardPresent(response));
-        assertThat("Bank must be present", isBankPresent(response));
+        assertThat("Bank must not be present", isBankPresent(response), is(false));
         assertThat("Smart-ID must be present", isSmartIdPresent(response));
     }
 
@@ -865,6 +866,71 @@ public class OpenIdConnectTest extends TestsBase {
                         "openid",
                         "email")
         );
+    }
+
+    @Test
+    @Feature("OIDC_DOMESTIC_AUTH_METHODS_FILTERING")
+    public void acrLowReturnsAllDefaultMethods() throws Exception {
+        Response response = Requests.getAuthenticationMethodsPageWithAcr(flow, "low");
+
+        assertThat("eIDAS must be present", isEidasPresent(response));
+        assertThat("MID must be present", isMidPresent(response));
+        assertThat("ID-Card must be present", isIdCardPresent(response));
+        assertThat("Bank must not be present", isBankPresent(response), is(false));
+        assertThat("Smart-ID must be present", isSmartIdPresent(response));
+    }
+    @Test
+    @Feature("OIDC_DOMESTIC_AUTH_METHODS_FILTERING")
+    public void acrSubstantialReturnsAllDefaultMethods() throws Exception {
+        Response response = Requests.getAuthenticationMethodsPageWithAcr(flow, "substantial");
+
+        assertThat("eIDAS must be present", isEidasPresent(response));
+        assertThat("MID must be present", isMidPresent(response));
+        assertThat("ID-Card must be present", isIdCardPresent(response));
+        assertThat("Bank must not be present", isBankPresent(response), is(false));
+        assertThat("Smart-ID must be present", isSmartIdPresent(response));
+    }
+    @Test
+    @Feature("OIDC_DOMESTIC_AUTH_METHODS_FILTERING")
+    public void acrHighReturnsNoSmartid() throws Exception {
+        Response response = Requests.getAuthenticationMethodsPageWithAcr(flow, "high");
+
+        assertThat("eIDAS must be present", isEidasPresent(response));
+        assertThat("MID must be present", isMidPresent(response));
+        assertThat("ID-Card must be present", isIdCardPresent(response));
+        assertThat("Bank must not be present", isBankPresent(response), is(false));
+        assertThat("Smart-ID must not be present", isSmartIdPresent(response), is(false));
+    }
+    @Test
+    @Feature("OIDC_DOMESTIC_AUTH_METHODS_FILTERING")
+    public void acrLowAllScopesReturnsAllAuthenticationMethods() throws Exception {
+        Response response = Requests.getAuthenticationMethodsPageWithScopeAndAcr(flow, "openid idcard mid banklink smartid eidas", "low");
+        assertThat("eIDAS must be present", isEidasPresent(response));
+        assertThat("MID must be present", isMidPresent(response));
+        assertThat("ID-Card must be present", isIdCardPresent(response));
+        assertThat("Bank must be present", isBankPresent(response));
+        assertThat("Smart-ID must be present", isSmartIdPresent(response));
+    }
+
+    @Test
+    @Feature("OIDC_DOMESTIC_AUTH_METHODS_FILTERING")
+    public void acrSubstantialAllScopesNoBanklink() throws Exception {
+        Response response = Requests.getAuthenticationMethodsPageWithScopeAndAcr(flow, "openid idcard mid banklink smartid eidas", "substantial");
+        assertThat("eIDAS must be present", isEidasPresent(response));
+        assertThat("MID must be present", isMidPresent(response));
+        assertThat("ID-Card must be present", isIdCardPresent(response));
+        assertThat("Bank must not be present", isBankPresent(response), is(false));
+        assertThat("Smart-ID must be present", isSmartIdPresent(response));
+    }
+    @Test
+    @Feature("OIDC_DOMESTIC_AUTH_METHODS_FILTERING")
+    public void acrHighNoSmartidAndBanklink() throws Exception {
+        Response response = Requests.getAuthenticationMethodsPageWithScopeAndAcr(flow, "openid idcard mid banklink smartid eidas", "high");
+        assertThat("eIDAS must be present", isEidasPresent(response));
+        assertThat("MID must be present", isMidPresent(response));
+        assertThat("ID-Card must be present", isIdCardPresent(response));
+        assertThat("Bank must not be present", isBankPresent(response), is(false));
+        assertThat("Smart-ID must not be present", isSmartIdPresent(response), is(false));
     }
 
     private Map<String, String> getQueryParams(String url) throws URISyntaxException {

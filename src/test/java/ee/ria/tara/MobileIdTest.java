@@ -76,6 +76,7 @@ public class MobileIdTest extends TestsBase {
 
         assertValidUserinfoResponse(token);
     }
+
     @Test
     public void mob1_mobileIdCancelAndRetrySuccessful() throws Exception {
         Map queryParams = OpenIdConnectUtils.getAuthorizationRequestData(flow);
@@ -101,6 +102,7 @@ public class MobileIdTest extends TestsBase {
 
         assertValidUserinfoResponse(token);
     }
+
     @Test
     public void mob1_mobileIdAuthenticationSuccessPNOEEPrefixWithRealLifeDelay() throws Exception {
         Response oidcResponse = MobileId.authenticateWithMobileId(flow, "00000566", "60001018800", 7000, OIDC_DEF_SCOPE);
@@ -115,6 +117,7 @@ public class MobileIdTest extends TestsBase {
         assertThat(claims.getJSONObjectClaim("profile_attributes").keySet(), not(hasItem("mobile_number")));
         assertThat(claims.getStringArrayClaim("amr")[0], equalTo(OIDC_AMR_MID));
     }
+
     @Test
     public void mob1_mobileIdAuthenticationSuccessWithSpecificSope() throws Exception {
         Response oidcResponse = MobileId.authenticateWithMobileId(flow, "00000766", "60001019906", 3000, OIDC_OPENID_SCOPE + OIDC_MID_SCOPE);
@@ -171,7 +174,7 @@ public class MobileIdTest extends TestsBase {
      * Verifying that user receives proper error message when user inserts invalid phone number
      */
     @Test
-    public void mob3_mobileIdAuthenticationInvalidPhoneNumber() throws Exception{
+    public void mob3_mobileIdAuthenticationInvalidPhoneNumber() throws Exception {
         String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdPollError(flow, "123456789123", "60001019906", 1000));
         assertThat(errorMessage, startsWith("Kasutajal pole Mobiil-ID lepingut."));
     }
@@ -223,6 +226,8 @@ public class MobileIdTest extends TestsBase {
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("2000-01-01"));
         assertThat(claims.getJSONObjectClaim("profile_attributes").keySet(), not(hasItem("mobile_number")));
         assertThat(claims.getStringArrayClaim("amr")[0], equalTo(OIDC_AMR_MID));
+        assertThat(claims.getClaim("acr"), equalTo("high"));
+
     }
 
     private void assertValidUserinfoResponse(Response userInfoResponse) {
@@ -234,6 +239,8 @@ public class MobileIdTest extends TestsBase {
         assertThat(json.get("family_name"), equalTo("O’CONNEŽ-ŠUSLIK TESTNUMBER"));
         assertThat(json.get("date_of_birth"), equalTo("2000-01-01"));
         assertThat(json.getList("amr"), equalTo(Arrays.asList(OIDC_AMR_MID)));
+        assertThat(json.get("acr"), equalTo("high"));
+
     }
 }
 

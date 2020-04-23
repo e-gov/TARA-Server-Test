@@ -93,7 +93,7 @@ public class BanklinkTest extends TestsBase {
         BanklinkMock.setBankDefault(flow, "EYP", "VK_USER_ID", "60001019896");
         BanklinkMock.setBankDefault(flow, "EYP", "VK_COUNTRY", "EE");
 
-        Map bankRequestParams = Banklink.startBankAuthentication(flow, "seb", OIDC_DEF_SCOPE, "et");
+        Map bankRequestParams = Banklink.startBankAuthentication(flow, "seb", "openid idcard mid banklink smartid eidas", "et");
         Map bankResponseParams = BanklinkMock.getBankResponse(flow, bankRequestParams);
         String location = Banklink.banklinkCallbackPOST(flow, bankResponseParams);
         Response oidcResponse = Requests.followLoginRedirects(flow, location);
@@ -108,6 +108,7 @@ public class BanklinkTest extends TestsBase {
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo(expectedOutcome.getFamilyName()));
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo(expectedOutcome.getDateOfBirth()));
         assertThat(claims.getStringArrayClaim("amr")[0], equalTo(expectedOutcome.getAmr()));
+        assertThat(claims.getClaim("acr"), equalTo("low"));
 
         assertValidUserinfoResponse(expectedOutcome, token);
     }
@@ -136,6 +137,7 @@ public class BanklinkTest extends TestsBase {
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo(expectedOutcome.getFamilyName()));
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo(expectedOutcome.getDateOfBirth()));
         assertThat(claims.getStringArrayClaim("amr")[0], equalTo(expectedOutcome.getAmr()));
+        assertThat(claims.getClaim("acr"), equalTo("low"));
 
         assertValidUserinfoResponse(expectedOutcome, token);
     }
@@ -149,7 +151,7 @@ public class BanklinkTest extends TestsBase {
         BanklinkMock.setBankDefault(flow, "HP", "VK_USER_ID", "60001019896");
         BanklinkMock.setBankDefault(flow, "HP", "VK_COUNTRY", "EE");
 
-        Map bankRequestParams = Banklink.startBankAuthentication(flow, "swedbank", OIDC_DEF_SCOPE, "et");
+        Map bankRequestParams = Banklink.startBankAuthentication(flow, "swedbank", "openid idcard mid banklink smartid eidas", "et");
         Map bankResponseParams = BanklinkMock.getBankResponse(flow, bankRequestParams);
         String location = Banklink.banklinkCallbackPOST(flow, bankResponseParams);
         Response oidcResponse = Requests.followLoginRedirects(flow, location);
@@ -164,6 +166,7 @@ public class BanklinkTest extends TestsBase {
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo(expectedOutcome.getFamilyName()));
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo(expectedOutcome.getDateOfBirth()));
         assertThat(claims.getStringArrayClaim("amr")[0], equalTo(expectedOutcome.getAmr()));
+        assertThat(claims.getClaim("acr"), equalTo("low"));
 
         assertValidUserinfoResponse(expectedOutcome, token);
     }
@@ -177,7 +180,7 @@ public class BanklinkTest extends TestsBase {
         BanklinkMock.setBankDefault(flow, "KREP", "VK_USER_ID", "60001019896");
         BanklinkMock.setBankDefault(flow, "KREP", "VK_COUNTRY", "EE");
 
-        Map bankRequestParams = Banklink.startBankAuthentication(flow, "coop", OIDC_DEF_SCOPE, "et");
+        Map bankRequestParams = Banklink.startBankAuthentication(flow, "coop", "openid idcard mid banklink smartid eidas", "et");
         Map bankResponseParams = BanklinkMock.getBankResponse(flow, bankRequestParams);
         String location = Banklink.banklinkCallbackGET(flow, bankResponseParams);
         Response oidcResponse = Requests.followLoginRedirects(flow, location);
@@ -191,6 +194,7 @@ public class BanklinkTest extends TestsBase {
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo(expectedOutcome.getFamilyName()));
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo(expectedOutcome.getDateOfBirth()));
         assertThat(claims.getStringArrayClaim("amr")[0], equalTo(expectedOutcome.getAmr()));
+        assertThat(claims.getClaim("acr"), equalTo("low"));
 
         assertValidUserinfoResponse(expectedOutcome, token);
     }
@@ -205,7 +209,7 @@ public class BanklinkTest extends TestsBase {
         BanklinkMock.setBankDefault(flow, "LHV", "VK_USER_ID", "60001019896");
         BanklinkMock.setBankDefault(flow, "LHV", "VK_COUNTRY", "EE");
 
-        Map bankRequestParams = Banklink.startBankAuthentication(flow, "lhv", OIDC_DEF_SCOPE, "et");
+        Map bankRequestParams = Banklink.startBankAuthentication(flow, "lhv", "openid idcard mid banklink smartid eidas", "et");
         Map bankResponseParams = BanklinkMock.getBankResponse(flow, bankRequestParams);
         String location = Banklink.banklinkCallbackPOST(flow, bankResponseParams);
         Response oidcResponse = Requests.followLoginRedirects(flow, location);
@@ -219,6 +223,7 @@ public class BanklinkTest extends TestsBase {
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo(expectedOutcome.getFamilyName()));
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo(expectedOutcome.getDateOfBirth()));
         assertThat(claims.getStringArrayClaim("amr")[0], equalTo(expectedOutcome.getAmr()));
+        assertThat(claims.getClaim("acr"), equalTo("low"));
 
         assertValidUserinfoResponse(expectedOutcome, token);
     }
@@ -233,7 +238,7 @@ public class BanklinkTest extends TestsBase {
         BanklinkMock.setBankDefault(flow, "NORDEA", "VK_USER_ID", "60001019896");
         BanklinkMock.setBankDefault(flow, "NORDEA", "VK_COUNTRY", "EE");
 
-        Map bankRequestParams = Banklink.startBankAuthentication(flow, "luminor", OIDC_DEF_SCOPE, "et");
+        Map bankRequestParams = Banklink.startBankAuthentication(flow, "luminor", "openid idcard mid banklink smartid eidas", "et");
         Map bankResponseParams = BanklinkMock.getBankResponse(flow, bankRequestParams);
         String location = Banklink.banklinkCallbackPOST(flow, bankResponseParams);
         Response oidcResponse = Requests.followLoginRedirects(flow, location);
@@ -247,6 +252,7 @@ public class BanklinkTest extends TestsBase {
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo(expectedOutcome.getFamilyName()));
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo(expectedOutcome.getDateOfBirth()));
         assertThat(claims.getStringArrayClaim("amr")[0], equalTo(expectedOutcome.getAmr()));
+        assertThat(claims.getClaim("acr"), equalTo("low"));
 
         assertValidUserinfoResponse(expectedOutcome, token);
     }
@@ -256,7 +262,7 @@ public class BanklinkTest extends TestsBase {
     public void bank1_bankRequestParams() throws Exception {
         BanklinkMock.createBank(flow, "HP", "swedbank_priv");
 
-        Map<String, String> bankRequestParams = Banklink.startBankAuthentication(flow, "swedbank", OIDC_DEF_SCOPE, "et");
+        Map<String, String> bankRequestParams = Banklink.startBankAuthentication(flow, "swedbank", "openid idcard mid banklink smartid eidas", "et");
         Map<String, String> expectedBankRequestParams = new HashMap<>();
         expectedBankRequestParams.put("VK_SERVICE", "4012");
         expectedBankRequestParams.put("VK_VERSION", "008");
@@ -278,7 +284,7 @@ public class BanklinkTest extends TestsBase {
     public void bank2_bankRequestParams_langEN() throws Exception {
         BanklinkMock.createBank(flow, "HP", "swedbank_priv");
 
-        Map bankRequestParams = Banklink.startBankAuthentication(flow, "swedbank", OIDC_DEF_SCOPE, "en");
+        Map bankRequestParams = Banklink.startBankAuthentication(flow, "swedbank", "openid idcard mid banklink smartid eidas", "en");
 
         Map<String, String> expectedBankRequestParams = new HashMap<String, String>();
         expectedBankRequestParams.put("VK_LANG", "ENG");
@@ -290,7 +296,7 @@ public class BanklinkTest extends TestsBase {
     public void bank2_bankRequestParams_langRU() throws Exception {
         BanklinkMock.createBank(flow, "HP", "swedbank_priv");
 
-        Map bankRequestParams = Banklink.startBankAuthentication(flow, "swedbank", OIDC_DEF_SCOPE, "ru");
+        Map bankRequestParams = Banklink.startBankAuthentication(flow, "swedbank", "openid idcard mid banklink smartid eidas", "ru");
 
         Map<String, String> expectedBankRequestParams = new HashMap<String, String>();
         expectedBankRequestParams.put("VK_LANG", "RUS");
@@ -302,7 +308,7 @@ public class BanklinkTest extends TestsBase {
     public void bank_VK_NONCE_reuseForbidden() throws Exception {
         BanklinkMock.createBank(flow, "HP", "swedbank_priv");
 
-        Map bankRequestParams = Banklink.startBankAuthentication(flow, "swedbank", OIDC_DEF_SCOPE, "et");
+        Map bankRequestParams = Banklink.startBankAuthentication(flow, "swedbank", "openid idcard mid banklink smartid eidas", "et");
         Map bankResponseParams = BanklinkMock.getBankResponse(flow, bankRequestParams);
         String location = Banklink.banklinkCallbackPOST(flow, bankResponseParams);
         Response oidcResponse = Requests.followLoginRedirects(flow, location);
@@ -318,8 +324,8 @@ public class BanklinkTest extends TestsBase {
     public void bank_single_VK_NONCE_in_session() throws Exception {
         BanklinkMock.createBank(flow, "HP", "swedbank_priv");
 
-        Map bankRequestParams = Banklink.startBankAuthentication(flow, "swedbank", OIDC_DEF_SCOPE, "et");
-        Map bankRequestParams2 = Banklink.startBankAuthentication(flow, "swedbank", OIDC_DEF_SCOPE, "et");
+        Map bankRequestParams = Banklink.startBankAuthentication(flow, "swedbank", "openid idcard mid banklink smartid eidas", "et");
+        Map bankRequestParams2 = Banklink.startBankAuthentication(flow, "swedbank", "openid idcard mid banklink smartid eidas", "et");
         Map bankResponseParams = BanklinkMock.getBankResponse(flow, bankRequestParams);
         String location = Banklink.banklinkCallbackPOST(flow, bankResponseParams);
         Response oidcResponse = Requests.followLoginRedirects(flow, location);
@@ -338,7 +344,7 @@ public class BanklinkTest extends TestsBase {
         BanklinkMock.setBankDefault(flow, "HP", "VK_USER_NAME", "Test-Surname,Given-Name1 Givenname2");
         BanklinkMock.setBankDefault(flow, "HP", "VK_USER_ID", "320000-00000");
         BanklinkMock.setBankDefault(flow, "HP", "VK_COUNTRY", "LV");
-        Map bankRequestParams = Banklink.startBankAuthentication(flow, "swedbank", OIDC_DEF_SCOPE, "et");
+        Map bankRequestParams = Banklink.startBankAuthentication(flow, "swedbank", "openid idcard mid banklink smartid eidas", "et");
         Map bankResponseParams = BanklinkMock.getBankResponse(flow, bankRequestParams);
         String location = Banklink.banklinkCallbackPOST(flow, bankResponseParams);
         Response oidcResponse = Requests.followLoginRedirects(flow, location);
@@ -350,6 +356,8 @@ public class BanklinkTest extends TestsBase {
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("TEST-SURNAME"));
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo(null));
         assertThat(claims.getStringArrayClaim("amr")[0], equalTo("banklink"));
+        assertThat(claims.getClaim("acr"), equalTo("low"));
+
     }
 
     @Test
@@ -385,5 +393,7 @@ public class BanklinkTest extends TestsBase {
         assertThat(json.get("family_name"), equalTo(expectedOutcome.getFamilyName()));
         assertThat(json.get("date_of_birth"), equalTo(expectedOutcome.getDateOfBirth()));
         assertThat(json.getList("amr"), equalTo(Arrays.asList(expectedOutcome.getAmr())));
+        assertThat(json.get("acr"), equalTo("low"));
+
     }
 }
