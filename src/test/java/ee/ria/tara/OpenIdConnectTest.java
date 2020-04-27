@@ -396,6 +396,14 @@ public class OpenIdConnectTest extends TestsBase {
     }
 
     @Test
+    public void oidc3_acrScopeMismatchhouldReturnError() throws Exception {
+        Response response = Requests.getAuthenticationMethodsPageWithScopeAndAcr(flow, "openid smartid", "high");
+
+        assertThat("Only supported acr_values are allowed", response.body().asString(), startsWith("RESPONSE ERROR: invalid_request - No authentication methods match the requested level of assurance."));
+
+    }
+
+    @Test
     public void oidc3_authenticationWithMidAcrValuesShouldSucceed() throws Exception {
         Map queryParams = OpenIdConnectUtils.getAuthorizationRequestData(flow);
         queryParams.put("acr_values", OIDC_ACR_VALUES_HIGH);
@@ -631,6 +639,7 @@ public class OpenIdConnectTest extends TestsBase {
 
         assertThat(errorMessage, startsWith("Keelatud autentimismeetod!"));
     }
+
 
     @Test
     @Feature("OIDC_SCOPES_EIDASONLY")
