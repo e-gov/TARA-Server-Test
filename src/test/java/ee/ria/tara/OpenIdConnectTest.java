@@ -888,6 +888,7 @@ public class OpenIdConnectTest extends TestsBase {
         assertThat("Bank must not be present", isBankPresent(response), is(false));
         assertThat("Smart-ID must be present", isSmartIdPresent(response));
     }
+
     @Test
     @Feature("OIDC_DOMESTIC_AUTH_METHODS_FILTERING")
     public void acrSubstantialReturnsAllDefaultMethods() throws Exception {
@@ -899,6 +900,7 @@ public class OpenIdConnectTest extends TestsBase {
         assertThat("Bank must not be present", isBankPresent(response), is(false));
         assertThat("Smart-ID must be present", isSmartIdPresent(response));
     }
+
     @Test
     @Feature("OIDC_DOMESTIC_AUTH_METHODS_FILTERING")
     public void acrHighReturnsNoSmartid() throws Exception {
@@ -910,6 +912,7 @@ public class OpenIdConnectTest extends TestsBase {
         assertThat("Bank must not be present", isBankPresent(response), is(false));
         assertThat("Smart-ID must not be present", isSmartIdPresent(response), is(false));
     }
+
     @Test
     @Feature("OIDC_DOMESTIC_AUTH_METHODS_FILTERING")
     public void acrLowAllScopesReturnsAllAuthenticationMethods() throws Exception {
@@ -931,6 +934,7 @@ public class OpenIdConnectTest extends TestsBase {
         assertThat("Bank must not be present", isBankPresent(response), is(false));
         assertThat("Smart-ID must be present", isSmartIdPresent(response));
     }
+
     @Test
     @Feature("OIDC_DOMESTIC_AUTH_METHODS_FILTERING")
     public void acrHighNoSmartidAndBanklink() throws Exception {
@@ -940,6 +944,22 @@ public class OpenIdConnectTest extends TestsBase {
         assertThat("ID-Card must be present", isIdCardPresent(response));
         assertThat("Bank must not be present", isBankPresent(response), is(false));
         assertThat("Smart-ID must not be present", isSmartIdPresent(response), is(false));
+    }
+
+    @Test
+    @Feature("OIDC_AUTHENTICATION_REQUEST_CANCELED")
+    public void cancelReturnsErrorToRelyingParty() throws Exception {
+        Map queryParams = OpenIdConnectUtils.getAuthorizationRequestData(flow);
+        Response authenticationResponse = Requests.openIdConnectAuthenticationRequest(flow, queryParams);
+        String location = authenticationResponse.then().extract().response()
+                .getHeader("location");
+        Response loginPage = Requests.followRedirect(flow, location);
+
+        String returnUrl = loginPage.getBody().htmlPath().getString("**.findAll { it.@class == 'c-tab-login__footer' }[0].p[0].a.@href");
+        assertThat(returnUrl, startsWith(flow.getRelyingParty().getRedirectUri()));
+
+        Response response = Requests.cancel(flow, returnUrl);
+        assertThat("openid scope must be present error", response.body().asString(), startsWith("RESPONSE ERROR: user_cancel - User canceled the login process"));
     }
 
     private Map<String, String> getQueryParams(String url) throws URISyntaxException {

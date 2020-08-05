@@ -12,6 +12,7 @@ import ee.ria.tara.steps.MobileId;
 import ee.ria.tara.steps.Requests;
 import ee.ria.tara.steps.Steps;
 import ee.ria.tara.utils.OpenIdConnectUtils;
+import io.qameta.allure.Feature;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -75,6 +76,17 @@ public class MobileIdTest extends TestsBase {
         assertValidIdToken(token);
 
         assertValidUserinfoResponse(token);
+    }
+
+    @Test
+    @Feature("OIDC_SCOPE_PHONE")
+    public void mob1_mobileIdAuthenticationSuccessWithRealLifeDelayPhoneScope() throws Exception {
+        Response oidcResponse = MobileId.authenticateWithMobileId(flow, "00000766", "60001019906", 7000, "openid phone");
+        Map<String, String> token = Requests.getTokenResponse(flow, OpenIdConnectUtils.getCode(flow, oidcResponse.getHeader("location")));
+
+        assertValidIdTokenWithPhoneNumber(token);
+
+        assertValidUserinfoResponseWithPhoneNumber(token);
     }
 
     @Test
@@ -217,6 +229,16 @@ public class MobileIdTest extends TestsBase {
         );
     }
 
+    private void assertValidUserinfoResponseWithPhoneNumber(Map<String, String> token) {
+        assertValidUserinfoResponseWithPhoneNumber(
+                Requests.getUserInfoWithAccessTokenAsBearerToken(flow, token.get("access_token"), flow.getOpenIDProvider().getUserInfoUrl())
+        );
+
+        assertValidUserinfoResponseWithPhoneNumber(
+                Requests.getUserInfoWithAccessTokenAsQueryParameter(flow, token.get("access_token"), flow.getOpenIDProvider().getUserInfoUrl())
+        );
+    }
+
     private void assertValidIdToken(Map<String, String> token) throws ParseException, JOSEException, IOException {
         JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token.get("id_token")).getJWTClaimsSet();
 
@@ -225,6 +247,21 @@ public class MobileIdTest extends TestsBase {
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("O’CONNEŽ-ŠUSLIK TESTNUMBER"));
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("2000-01-01"));
         assertThat(claims.getJSONObjectClaim("profile_attributes").keySet(), not(hasItem("mobile_number")));
+        assertThat(claims.toJSONObject().keySet(), not(hasItem("mobile_number")));
+        assertThat(claims.getStringArrayClaim("amr")[0], equalTo(OIDC_AMR_MID));
+        assertThat(claims.getClaim("acr"), equalTo("high"));
+
+    }
+
+    private void assertValidIdTokenWithPhoneNumber(Map<String, String> token) throws ParseException, JOSEException, IOException {
+        JWTClaimsSet claims = Steps.verifyTokenAndReturnSignedJwtObject(flow, token.get("id_token")).getJWTClaimsSet();
+
+        assertThat(claims.getSubject(), equalTo("EE60001019906"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("given_name"), equalTo("MARY ÄNN"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("O’CONNEŽ-ŠUSLIK TESTNUMBER"));
+        assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("2000-01-01"));
+        assertThat(claims.getClaim("phone_number"), equalTo("+37200000766"));
+        assertThat(claims.getClaim("phone_number_verified"), equalTo(true));
         assertThat(claims.getStringArrayClaim("amr")[0], equalTo(OIDC_AMR_MID));
         assertThat(claims.getClaim("acr"), equalTo("high"));
 
@@ -238,6 +275,20 @@ public class MobileIdTest extends TestsBase {
         assertThat(json.get("given_name"), equalTo("MARY ÄNN"));
         assertThat(json.get("family_name"), equalTo("O’CONNEŽ-ŠUSLIK TESTNUMBER"));
         assertThat(json.get("date_of_birth"), equalTo("2000-01-01"));
+        assertThat(json.getList("amr"), equalTo(Arrays.asList(OIDC_AMR_MID)));
+        assertThat(json.get("acr"), equalTo("high"));
+    }
+
+    private void assertValidUserinfoResponseWithPhoneNumber(Response userInfoResponse) {
+        JsonPath json = userInfoResponse.jsonPath();
+        assertThat(json.getMap("$.").keySet(), hasItems("sub", "auth_time", "given_name", "family_name", "date_of_birth", "amr"));
+        assertThat(json.get("sub"), equalTo("EE60001019906"));
+        assertThat("auth_time must be a unix timestamp format and within the allowed timeframe", json.getLong("auth_time"), is(both(greaterThan(new Long(Instant.now().getEpochSecond() - TestConfiguration.ALLOWED_TIME_DIFFERENCE_IN_SECONDS))).and(lessThanOrEqualTo(Instant.now().getEpochSecond()))));
+        assertThat(json.get("given_name"), equalTo("MARY ÄNN"));
+        assertThat(json.get("family_name"), equalTo("O’CONNEŽ-ŠUSLIK TESTNUMBER"));
+        assertThat(json.get("date_of_birth"), equalTo("2000-01-01"));
+        assertThat(json.get("phone_number"), equalTo("+37200000766"));
+        assertThat(json.get("phone_number_verified"), equalTo(true));
         assertThat(json.getList("amr"), equalTo(Arrays.asList(OIDC_AMR_MID)));
         assertThat(json.get("acr"), equalTo("high"));
 

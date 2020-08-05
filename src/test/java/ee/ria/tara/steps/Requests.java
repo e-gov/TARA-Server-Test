@@ -83,9 +83,9 @@ public class Requests {
 
         return request
                 .when()
-                    .get(location)
+                .get(location)
                 .then()
-                    .extract().response();
+                .extract().response();
     }
 
     @Step("{flow.endUser}GET UserInfo")
@@ -94,7 +94,7 @@ public class Requests {
                 .filter(flow.getCookieFilter())
                 .filter(new AllureRestAssuredFormParam())
                 .relaxedHTTPSValidation()
-            .when();
+                .when();
 
         if (accessToken != null)
             request.queryParam("access_token", accessToken);
@@ -240,6 +240,18 @@ public class Requests {
                 .when()
                 .urlEncodingEnabled(false)
                 .get(flow.getOpenIDProvider().getMetadataUrl());
+    }
+
+    @Step("Return to service provider")
+    public static Response cancel(OpenIdConnectFlow flow, String url) {
+        return given()
+                .filter(flow.getCookieFilter())
+                .filter(new AllureRestAssuredCorrectHeaders())
+                .relaxedHTTPSValidation()
+                .redirects().follow(false)
+                .when()
+                .urlEncodingEnabled(false)
+                .get(url);
     }
 
     public static Map<String, String> getTokenResponse(OpenIdConnectFlow flow, String authorizationCode) {
