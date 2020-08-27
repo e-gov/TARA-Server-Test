@@ -110,7 +110,7 @@ public class DigiDocServiceTest extends TestsBase {
     @Test
     public void mob2_mobileIdAuthenticationTechnicalError() throws Exception {
         String errorMessage = MobileId.extractError(MobileId.authenticateWithMobileIdPollError(flow, "00000666", "60001019961", 3000));
-        assertThat(errorMessage, startsWith("Autentimine Mobiil-ID-ga ei õnnestunud. Testi oma Mobiil-ID toimimist DigiDoc4 kliendis: https://www.id.ee/index.php?id=39003"));
+        assertThat(errorMessage, startsWith("Autentimine Mobiil-ID-ga ei õnnestunud. Testi oma Mobiil-ID toimimist DigiDoc4 kliendis: https://www.id.ee/artikkel/soovid-arvutis-digiallkirja-anda/"));
     }
 
     @Test
