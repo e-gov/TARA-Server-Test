@@ -193,7 +193,7 @@ public class SmartIdTest extends TestsBase {
         assertThat(json.get("family_name"), equalTo("SMART-ID"));
         assertThat(json.get("date_of_birth"), equalTo("1801-01-01"));
         assertThat(json.getList("amr"), equalTo(Arrays.asList(OIDC_AMR_SMARTID)));
-        assertThat(json.get("acr"), equalTo("substantial"));
+        assertThat(json.get("acr"), equalTo("high"));
 
     }
 }
