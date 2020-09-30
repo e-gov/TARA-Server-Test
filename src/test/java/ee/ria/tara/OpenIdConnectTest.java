@@ -397,7 +397,7 @@ public class OpenIdConnectTest extends TestsBase {
 
     @Test
     public void oidc3_acrScopeMismatchhouldReturnError() throws Exception {
-        Response response = Requests.getAuthenticationMethodsPageWithScopeAndAcr(flow, "openid smartid", "high");
+        Response response = Requests.getAuthenticationMethodsPageWithScopeAndAcr(flow, "openid banklink", "high");
 
         assertThat("Only supported acr_values are allowed", response.body().asString(), startsWith("RESPONSE ERROR: invalid_request - No authentication methods match the requested level of assurance."));
 
@@ -903,14 +903,14 @@ public class OpenIdConnectTest extends TestsBase {
 
     @Test
     @Feature("OIDC_DOMESTIC_AUTH_METHODS_FILTERING")
-    public void acrHighReturnsNoSmartid() throws Exception {
+    public void acrHighReturnsNoBanklink() throws Exception {
         Response response = Requests.getAuthenticationMethodsPageWithAcr(flow, "high");
 
         assertThat("eIDAS must be present", isEidasPresent(response));
         assertThat("MID must be present", isMidPresent(response));
         assertThat("ID-Card must be present", isIdCardPresent(response));
         assertThat("Bank must not be present", isBankPresent(response), is(false));
-        assertThat("Smart-ID must not be present", isSmartIdPresent(response), is(false));
+        assertThat("Smart-ID must be present", isSmartIdPresent(response));
     }
 
     @Test
@@ -937,13 +937,13 @@ public class OpenIdConnectTest extends TestsBase {
 
     @Test
     @Feature("OIDC_DOMESTIC_AUTH_METHODS_FILTERING")
-    public void acrHighNoSmartidAndBanklink() throws Exception {
+    public void acrHighNoBanklink() throws Exception {
         Response response = Requests.getAuthenticationMethodsPageWithScopeAndAcr(flow, "openid idcard mid banklink smartid eidas", "high");
         assertThat("eIDAS must be present", isEidasPresent(response));
         assertThat("MID must be present", isMidPresent(response));
         assertThat("ID-Card must be present", isIdCardPresent(response));
         assertThat("Bank must not be present", isBankPresent(response), is(false));
-        assertThat("Smart-ID must not be present", isSmartIdPresent(response), is(false));
+        assertThat("Smart-ID must not be present", isSmartIdPresent(response));
     }
 
     @Test
