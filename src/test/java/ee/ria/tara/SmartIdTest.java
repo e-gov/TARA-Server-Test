@@ -180,7 +180,7 @@ public class SmartIdTest extends TestsBase {
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("family_name"), equalTo("SMART-ID"));
         assertThat(claims.getJSONObjectClaim("profile_attributes").getAsString("date_of_birth"), equalTo("1801-01-01"));
         assertThat(claims.getStringArrayClaim("amr")[0], equalTo("smartid"));
-        assertThat(claims.getClaim("acr"), equalTo("substantial"));
+        assertThat(claims.getClaim("acr"), equalTo("high"));
 
     }
 
