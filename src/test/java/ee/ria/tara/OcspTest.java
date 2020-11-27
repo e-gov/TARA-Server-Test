@@ -114,7 +114,7 @@ public class OcspTest extends TestsBase {
         OcspMock.setStatus(flow, "14159925714943538784317767030970630007", ocspResponseData);
 
         String errorMessage = IdCard.extractError(IdCard.authenticateWithIdAndReceiveError(flow, "38001085718.pem", OIDC_DEF_SCOPE, "et"));
-        assertThat(errorMessage, startsWith("Teie sertifikaadid ei kehti."));
+        assertThat(errorMessage, startsWith("Teie sertifikaadid on tühistatud."));
     }
 
     @Test
