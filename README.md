@@ -1,4 +1,4 @@
-# TARA integratsioonitestid
+# [DEPRECATED] TARA integratsioonitestid
 
 **NB! Antud testid on arenduses ning  muutuvad projekti edenedes.**
 
